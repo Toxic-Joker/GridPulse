@@ -68,6 +68,7 @@ function defaultShow() {
     sponsor: { text: '', logo: '' },
     countdown: { title: '', target: null },
     followedDrivers: [],
+    autoLive: true,
   };
 }
 

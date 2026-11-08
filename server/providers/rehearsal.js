@@ -408,6 +408,22 @@ function rehearsalCircuit() {
   };
 }
 
+// Standings and calendar for the rehearsal's fictional season: the Harbour Grand Prix is
+// round 10, and these are the standings after round 9.
+function rehearsalStandings() {
+  const random = rng(77);
+  const drivers = DRIVERS.map(([, code, first, last], i) => ({ code, name: `${first} ${last}`, team: TEAMS[Math.floor(i / 2)][0], points: Math.round(170 - i * 7.5 + random() * 12) }))
+    .sort((a, b) => b.points - a.points).map((d, i) => ({ ...d, position: i + 1 }));
+  const teams = new Map();
+  drivers.forEach((d) => teams.set(d.team, (teams.get(d.team) || 0) + d.points));
+  const constructors = [...teams.entries()].sort((a, b) => b[1] - a[1]).map(([team, points], i) => ({ team, points, position: i + 1 }));
+  return { season: 2026, round: 9, drivers, constructors };
+}
+
+function rehearsalCalendar() {
+  return { season: 2026, rounds: [{ round: 10, name: 'Harbour Grand Prix', circuitId: 'harbour', country: 'Harbourland', sessions: [{ type: 'race', name: 'Race', startsAt: '2026-06-01T14:01:00Z' }] }] };
+}
+
 // Writes the rehearsal into the recordings folder once; a new VERSION writes a new file.
 function ensureRehearsal(recordingsDir) {
   const file = path.join(recordingsDir, REHEARSAL_ID);
@@ -419,4 +435,4 @@ function ensureRehearsal(recordingsDir) {
   return REHEARSAL_ID;
 }
 
-module.exports = { generateRehearsal, ensureRehearsal, rehearsalCircuit, REHEARSAL_ID, LAPS, TRACK_M, SEGMENTS };
+module.exports = { generateRehearsal, ensureRehearsal, rehearsalCircuit, rehearsalStandings, rehearsalCalendar, REHEARSAL_ID, LAPS, TRACK_M, SEGMENTS };

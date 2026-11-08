@@ -20,6 +20,15 @@ function sessionType(info) {
   return 'practice';
 }
 
+// SessionInfo gives local time plus an offset; the calendar speaks UTC.
+function startsAt(info) {
+  const local = Date.parse(`${info?.StartDate}Z`);
+  const m = /^(-?)(\d\d):(\d\d)/.exec(String(info?.GmtOffset || '00:00'));
+  if (!Number.isFinite(local) || !m) return null;
+  const offset = (Number(m[2]) * 60 + Number(m[3])) * 60000 * (m[1] === '-' ? -1 : 1);
+  return new Date(local - offset).toISOString();
+}
+
 function session(info) {
   const year = num(String(info?.Path || '').slice(0, 4)) ?? num(String(info?.StartDate || '').slice(0, 4));
   return {
@@ -32,6 +41,7 @@ function session(info) {
     type: sessionType(info),
     name: info?.Name ?? '',
     path: info?.Path ?? '',
+    startsAt: startsAt(info),
   };
 }
 

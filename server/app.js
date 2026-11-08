@@ -17,6 +17,10 @@ const { ReplayProvider } = require('./providers/replay');
 const { isRecordingId } = require('./providers/recordings');
 const { ensureRehearsal } = require('./providers/rehearsal');
 const { MultiViewerProvider } = require('./providers/multiviewer');
+const { JolpicaProvider } = require('./providers/jolpica');
+const { dueSession, nextSession } = require('./domain/schedule');
+
+const SCHEDULE_MS = 60000;
 
 const LOG_SIZE = 60;
 
@@ -38,7 +42,7 @@ function loadTokens(dataDir, env) {
   return tokens;
 }
 
-function createApp({ env = process.env, dataDir, providers: providersOverride, circuits: circuitsOverride } = {}) {
+function createApp({ env = process.env, dataDir, providers: providersOverride, circuits: circuitsOverride, tables: tablesOverride, schedule = true } = {}) {
   fs.mkdirSync(dataDir, { recursive: true });
   const tokens = loadTokens(dataDir, env);
   const secrets = new Secrets(dataDir);
@@ -111,6 +115,7 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
       pendingOnAir: feed.delay.pending,
       log,
       f1tv: secrets.publicView(),
+      next: upcoming,
     };
   }
 
@@ -133,9 +138,60 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
     return { ...event, display: event.quiet || minorFlag ? 'ticker' : rule };
   }
 
+  const tablesSource = tablesOverride || new JolpicaProvider({ dataDir });
+  let upcoming = null;
+  let autoStarted = null;
+  let scheduleTimer = null;
+
+  // Connects to the live feed 15 minutes before a session on the calendar, even mid-rehearsal,
+  // and lets go once the session's window has passed. "Follow the live session" still works any time.
+  // Inside a session's window the feed may already say it is over (the window is generous for
+  // delays). Then let go and put back whatever was playing, rather than sit on a finished session.
+  async function autoFollow(due) {
+    const before = show.source;
+    await feed.follow('live');
+    await new Promise((resolve) => { const t = setTimeout(resolve, 1500); t.unref?.(); });
+    if (feed.source === 'live' && feed.live?.status === 'ended') {
+      addLog(`${due.meeting} ${due.name} has already finished`);
+      await providers.live?.stop?.();
+      if (before === 'replay' && show.replay.recording) followSource('replay');
+      return;
+    }
+    show = { ...show, source: 'live' };
+    addLog(`${due.meeting} ${due.name}: following it live`);
+    persist();
+  }
+
+  async function checkSchedule() {
+    const now = Date.now();
+    try {
+      const year = new Date(now).getUTCFullYear();
+      let calendar = await tablesSource.calendar(year);
+      upcoming = nextSession(calendar, now);
+      if (!upcoming) {
+        calendar = await tablesSource.calendar(year + 1).catch(() => calendar);
+        upcoming = nextSession(calendar, now);
+      }
+      const due = dueSession(calendar, now);
+      const key = due ? `${due.round}-${due.type}-${due.at}` : null;
+      if (show.autoLive && due && key !== autoStarted && feed.source !== 'live') {
+        autoStarted = key;
+        await autoFollow(due);
+      } else if (!due && autoStarted && feed.source === 'live') {
+        autoStarted = null;
+        providers.live?.stop?.();
+        addLog('The session window has passed: live feed closed');
+      }
+    } catch (err) {
+      addLog(`Could not check the calendar: ${err.message}`);
+    }
+    publishControl();
+  }
+
   const feed = new Feed({
     providers,
     circuits: circuitsOverride || new MultiViewerProvider({ dataDir }),
+    tablesSource,
     getShow: () => show,
     log: addLog,
     onChange: publishControl,
@@ -166,6 +222,9 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
       }
       followSource(source);
       addLog(source === 'live' ? 'Connecting to the live session' : `Replaying ${show.replay.recording}`);
+    } else if (name === 'autoLive') {
+      show = { ...show, autoLive: Boolean(action.on) };
+      addLog(show.autoLive ? 'Live sessions will be followed automatically' : 'Automatic live following is off');
     } else if (name === 'f1tvToken') {
       try { secrets.setF1tvToken(action.token); } catch (err) { throw new ActionError(err.message); }
       addLog(secrets.publicView().present ? 'F1 TV token saved' : 'F1 TV token removed');
@@ -183,6 +242,7 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
         addLog(`Broadcast delay set to ${show.delaySeconds}s`);
       }
       if (name === 'replaySpeed') providers.replay?.setSpeed?.(show.replay.speed);
+      if (name === 'widget' && show.widgets[action.id]?.on) feed.refreshTables();
     }
     overlayIo.emit('show', overlayShow());
     persist();
@@ -257,12 +317,18 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
 
   function start() {
     feed.setDelay(show.delaySeconds);
+    if (schedule) {
+      scheduleTimer = setInterval(checkSchedule, SCHEDULE_MS);
+      scheduleTimer.unref?.();
+      checkSchedule();
+    }
     if (show.source === 'live') followSource('live');
     else if (show.replay.recording && providers.replay?.list?.().some((r) => r.id === show.replay.recording)) followSource('replay');
   }
 
   function close() {
     feed.stop();
+    clearInterval(scheduleTimer);
     clearTimeout(saveTimer);
     clearTimeout(changeTimer);
     io.close();

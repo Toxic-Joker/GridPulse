@@ -9,7 +9,7 @@ const { applyAction, defaultShow, ActionError } = require('../../server/show');
 
 async function boot(env = {}) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gridpulse-test-'));
-  const instance = createApp({ dataDir, env });
+  const instance = createApp({ dataDir, env, schedule: false });
   await new Promise((resolve) => instance.server.listen(0, '127.0.0.1', resolve));
   instance.start();
   const url = `http://127.0.0.1:${instance.server.address().port}`;

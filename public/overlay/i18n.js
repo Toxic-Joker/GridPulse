@@ -9,6 +9,7 @@ const STRINGS = {
     fastestLap: 'Fastest lap', penalty: 'Penalty', retirement: 'Retired', lap1: 'Lap 1', chequered: 'Chequered flag', wins: 'wins',
     for: 'for', on: 'on', safetyCar: 'Safety car', vsc: 'Virtual safety car', vscEnding: 'VSC ending', redFlag: 'Red flag', yellow: 'Yellow flag', trackClear: 'Track clear',
     gains: 'Gains', losses: 'Losses', laps: 'laps', waitingMap: 'Loading the circuit map',
+    championship: 'Championship', drivers: 'Drivers', constructors: 'Constructors', projected: 'Projected championship', projectedNote: 'Shown during a race or sprint', afterRound: 'after round', loading: 'Loading', nextSession: 'Next session', noSession: 'No session scheduled', daysShort: 'd', result: 'Result', runningOrder: 'Running order',
   },
   fr: {
     race: 'Course', sprint: 'Sprint', qualifying: 'Qualifications', sprint_qualifying: 'Qualifications sprint', practice: 'Essais',
@@ -18,6 +19,7 @@ const STRINGS = {
     fastestLap: 'Meilleur tour', penalty: 'Pénalité', retirement: 'Abandon', lap1: 'Tour 1', chequered: 'Drapeau à damier', wins: 'gagne',
     for: 'pour', on: 'sur', safetyCar: 'Voiture de sécurité', vsc: 'Voiture de sécurité virtuelle', vscEnding: 'Fin de VSC', redFlag: 'Drapeau rouge', yellow: 'Drapeau jaune', trackClear: 'Piste dégagée',
     gains: 'Gagnés', losses: 'Perdus', laps: 'tours', waitingMap: 'Chargement du circuit',
+    championship: 'Championnat', drivers: 'Pilotes', constructors: 'Constructeurs', projected: 'Championnat en direct', projectedNote: 'Affiché pendant une course ou un sprint', afterRound: 'après la manche', loading: 'Chargement', nextSession: 'Prochaine séance', noSession: 'Aucune séance prévue', daysShort: 'j', result: 'Résultat', runningOrder: 'Classement provisoire',
   },
   es: {
     race: 'Carrera', sprint: 'Sprint', qualifying: 'Clasificación', sprint_qualifying: 'Clasificación sprint', practice: 'Libres',
@@ -27,6 +29,7 @@ const STRINGS = {
     fastestLap: 'Vuelta rápida', penalty: 'Sanción', retirement: 'Abandono', lap1: 'Vuelta 1', chequered: 'Bandera a cuadros', wins: 'gana',
     for: 'por', on: 'a', safetyCar: 'Coche de seguridad', vsc: 'Coche de seguridad virtual', vscEnding: 'Fin del VSC', redFlag: 'Bandera roja', yellow: 'Bandera amarilla', trackClear: 'Pista despejada',
     gains: 'Ganan', losses: 'Pierden', laps: 'vueltas', waitingMap: 'Cargando el circuito',
+    championship: 'Campeonato', drivers: 'Pilotos', constructors: 'Constructores', projected: 'Campeonato en vivo', projectedNote: 'Se muestra durante una carrera o sprint', afterRound: 'tras la ronda', loading: 'Cargando', nextSession: 'Próxima sesión', noSession: 'No hay sesión prevista', daysShort: 'd', result: 'Resultado', runningOrder: 'Orden provisional',
   },
   pt: {
     race: 'Corrida', sprint: 'Sprint', qualifying: 'Classificação', sprint_qualifying: 'Classificação sprint', practice: 'Treino livre',
@@ -36,6 +39,7 @@ const STRINGS = {
     fastestLap: 'Volta mais rápida', penalty: 'Punição', retirement: 'Abandono', lap1: 'Volta 1', chequered: 'Bandeira quadriculada', wins: 'vence',
     for: 'pelo', on: 'sobre', safetyCar: 'Safety car', vsc: 'Safety car virtual', vscEnding: 'Fim do VSC', redFlag: 'Bandeira vermelha', yellow: 'Bandeira amarela', trackClear: 'Pista liberada',
     gains: 'Ganhos', losses: 'Perdas', laps: 'voltas', waitingMap: 'Carregando o circuito',
+    championship: 'Campeonato', drivers: 'Pilotos', constructors: 'Construtores', projected: 'Campeonato ao vivo', projectedNote: 'Exibido durante uma corrida ou sprint', afterRound: 'após a etapa', loading: 'Carregando', nextSession: 'Próxima sessão', noSession: 'Nenhuma sessão prevista', daysShort: 'd', result: 'Resultado', runningOrder: 'Ordem provisória',
   },
 };
 

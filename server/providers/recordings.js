@@ -53,6 +53,7 @@ class Recorder {
   end() {
     this.stream?.end();
     this.stream = null;
+    this.id = null;
   }
 }
 

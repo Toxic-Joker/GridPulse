@@ -43,6 +43,7 @@ Since about 15 October 2026, F1's archive of past sessions needs an F1 TV login 
 As a streamer, I want the overlay to connect to the live session by itself, so I can focus on commentating.
 - The control room shows the next session from the calendar, with a countdown. Within 15 minutes of its start, GridPulse connects to the live feed. A "Connect now" button does it at any time.
 - It stays connected through delays and red flags until the feed marks the session finalised, or 5 hours after the scheduled start.
+- Automatic following can be switched off in the control room. If the window is open but the feed says the session is already over, GridPulse lets go, records nothing, and goes back to the rehearsal it was playing.
 - The overlay shows the session bug (GP name, "Race" or "Sprint", lap N/M, track status) and the timing tower (position, driver code, team colour, interval or gap, tyre and its age, pit stop count).
 - The tower fits 22 cars (11 teams in 2026) and never assumes a fixed grid size. It handles lapped cars, retirements, pit-lane starts, cars that don't start, and a race ended on time rather than laps.
 - If the feed drops, the last state stays on air, the control room shows "stale", and GridPulse reconnects with backoff.

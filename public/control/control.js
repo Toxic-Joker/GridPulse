@@ -62,7 +62,9 @@ if (!token) {
       live && h('p', null, `${live.session.meetingName} · ${live.session.name} · lap ${live.laps.current}/${live.laps.total ?? '?'} · ${live.track.status.toUpperCase()} · ${live.drivers.slice(0, 3).map((d) => d.code).join(', ')}`),
       h('section', null,
         h('h2', null, 'Session'),
-        h('button', { 'data-live': '' }, 'Follow the live session'),
+        state.next && h('p', null, `Next: ${state.next.meeting} · ${state.next.name} · ${new Date(state.next.at).toLocaleString()}`),
+        h('label', null, h('input', { type: 'checkbox', 'data-auto': '', checked: state.show.autoLive }), ' Follow live sessions automatically (15 minutes before the start)'),
+        h('button', { 'data-live': '' }, 'Follow the live session now'),
         h('div', null, picker, h('button', { 'data-replay': '' }, 'Replay'),
           catalog.replaySpeeds.map((s) => h('button', { 'data-speed': s, class: state.show.replay.speed === s ? 'on' : '' }, `${s}×`)))),
       h('section', null,
@@ -89,6 +91,7 @@ if (!token) {
         h('code', null, overlayUrl))));
 
     // Handlers are attached here rather than through attributes, to keep the CSP strict.
+    root.querySelector('[data-auto]').addEventListener('change', (e) => send({ name: 'autoLive', on: e.target.checked }));
     root.querySelector('[data-live]').addEventListener('click', () => send({ name: 'follow', source: 'live' }));
     root.querySelector('[data-replay]').addEventListener('click', () => send({ name: 'follow', source: 'replay', recording: picker.value }));
     root.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => send({ name: 'replaySpeed', speed: Number(b.dataset.speed) })));

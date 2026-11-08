@@ -36,7 +36,7 @@ test('recordings are listed with their session from the first line', () => {
 test('a recording replays through the whole pipeline to the overlay', async (t) => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gridpulse-replay-'));
   writeRecording(dataDir);
-  const instance = createApp({ dataDir, env: {} });
+  const instance = createApp({ dataDir, env: {}, schedule: false });
   await new Promise((resolve) => instance.server.listen(0, '127.0.0.1', resolve));
   instance.start();
   const url = `http://127.0.0.1:${instance.server.address().port}`;

@@ -39,7 +39,9 @@ class F1LiveProvider {
     const subscribe = async () => {
       const state = await connection.invoke('Subscribe', TOPICS);
       const at = Date.now();
-      this.recorder?.state(state, at);
+      // A session that is already over has nothing new to record.
+      const over = ['Finalised', 'Ends'].includes(state?.SessionStatus?.Status);
+      if (!over) this.recorder?.state(state, at);
       // The Subscribe reply is the full current state: the engine treats it as a baseline.
       onMessage({ topic: '*', data: state });
       this.status = { state: 'live', message: `Connected to ${state?.SessionInfo?.Meeting?.Name ?? 'the live feed'}${token ? ' with F1 TV' : ''}` };
@@ -57,7 +59,7 @@ class F1LiveProvider {
     try {
       await connection.start();
       await subscribe();
-      if (this.recorder) this.log(`Recording this session to data/recordings/${this.recorder.id}`);
+      if (this.recorder?.id) this.log(`Recording this session to data/recordings/${this.recorder.id}`);
     } catch (err) {
       this.status = { state: 'error', message: `Could not connect to the live feed: ${err.message}` };
     }

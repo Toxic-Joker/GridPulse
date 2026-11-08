@@ -216,6 +216,13 @@ All rules run on consecutive snapshots after the baseline.
 - **Spike 2, archive:** every file, any season, answers 401 since about 15 October 2026. FastF1 and undercut-f1 added F1 TV login for it.
 - **Real payload notes** (from the São Paulo GP recording): 22 cars; 22 mini-sectors per lap there (7 + 8 + 7); segment status 2048 = completed, 0 = not yet; `TrackStatus` codes 1/2/4/5/6/7; `SessionStatus` goes `Started` → `Finished` at the flag; `ExtrapolatedClock` keeps `Extrapolating: true` after the flag; `RaceControlMessages` patches add index keys; race control `Utc` has no time zone (it is UTC).
 
+## Standings, countdown, auto-connect (built)
+
+- **Jolpica** (`providers/jolpica.js`): calendar (24 h cache), driver and constructor standings and sprint results (1 h), one request at a time. Loaded by `feed.refreshTables()` only while the championship, projected, full-screen championship or countdown widget is on, every 60 s, and published straight away (season data, not race data).
+- **Projection** (`domain/points.js`): `roundFor` matches the session to its round by race date (±4 days). If Jolpica's standings already include that round, nothing is added; otherwise this session's points are added in running order, plus the weekend's sprint from Jolpica's sprint results when the standings don't include it yet. Ties keep the previous order. It rides on each frame (`frame.projected`), so it goes on air with the order it was made from.
+- **Rehearsal:** fictional standings (after round 9) and a one-race calendar place the Harbour GP as round 10. The countdown still uses the real calendar.
+- **Auto-connect** (`domain/schedule.js`, `app.js`): every 60 s, a session is due from 15 min before its start to 5 h after. If due and not already live, follow live; if the feed then says the session has ended, stop and go back to the replay. `f1Live` doesn't record a session that is already finalised. `createApp({ schedule: false })` turns this off in tests.
+
 ## Track radar (built)
 
 - **Outline:** `providers/multiviewer.js` fetches `/circuits/{key}/{year}` (falling back to the two previous years), cached forever in `data/cache/`; the rehearsal circuit (key 9001) is built in. `domain/track.js` builds the Circuit and finds the start line from the corners' `length` (distance from the line), taking the median offset.
