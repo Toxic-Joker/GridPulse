@@ -59,7 +59,7 @@ if (!token) {
     root.replaceChildren(h('main', null,
       h('h1', null, 'GridPulse'),
       h('p', null, `Feed: ${state.status.state} · ${state.status.message}`),
-      live && h('p', null, `${live.session.meetingName} · ${live.session.name} · lap ${live.laps.current}/${live.laps.total ?? '?'} · ${live.track.status.toUpperCase()} · ${live.drivers.slice(0, 3).map((d) => d.code).join(', ')}`),
+      live && h('p', null, `${live.session.meetingName} · ${live.session.name} · ${['race', 'sprint'].includes(live.session.type) ? `lap ${live.laps.current}/${live.laps.total ?? '?'}` : live.session.part ? `Q${live.session.part}` : live.status} · ${live.track.status.toUpperCase()} · ${live.drivers.slice(0, 3).map((d) => d.code).join(', ')}`),
       h('section', null,
         h('h2', null, 'Session'),
         state.next && h('p', null, `Next: ${state.next.meeting} · ${state.next.name} · ${new Date(state.next.at).toLocaleString()}`),

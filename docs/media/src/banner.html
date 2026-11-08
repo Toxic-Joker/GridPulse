@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GridPulse banner</title>
+<!-- README banner, rendered to docs/media/banner.png by scripts/readme-media.js. 1600×500. -->
+<style>
+@font-face { font-family: 'Barlow Condensed'; font-weight: 700; src: url('../../../public/vendor/fonts/barlow-condensed-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-weight: 600; src: url('../../../public/vendor/fonts/barlow-condensed-latin-600-normal.woff2') format('woff2'); }
+html, body { margin: 0; width: 1600px; height: 500px; overflow: hidden; }
+body { background: radial-gradient(120% 120% at 50% 0%, #182240, #05070e 70%); font-family: 'Barlow Condensed', sans-serif; color: #f3f5fb; position: relative; }
+.lines { position: absolute; inset: 0; opacity: .09; }
+.lines line { stroke: #f3f5fb; stroke-width: 4; }
+.bar { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); display: flex; height: 176px; filter: drop-shadow(0 14px 30px rgba(0,0,0,.55)); }
+.name { display: flex; align-items: center; padding: 0 64px 0 92px; background: #0d1220; clip-path: polygon(48px 0, 100% 0, 100% 100%, 0 100%); }
+.name b { font-size: 150px; line-height: 1; letter-spacing: .01em; }
+.name b span { color: #ff3b3b; }
+.count { display: flex; align-items: center; padding: 0 92px 0 54px; background: #ff3b3b; color: #1d0303; clip-path: polygon(0 0, calc(100% - 48px) 0, 100% 100%, 0 100%); }
+.count b { font-size: 120px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.name b { white-space: nowrap; }
+.flag { position: absolute; left: 50%; top: 268px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; height: 72px; padding: 0 40px; background: #f3f5fb; color: #0b0d14; clip-path: polygon(0 0, 100% 0, calc(100% - 26px) 100%, 26px 100%); }
+.flag i { display: block; width: 78px; height: 44px; background: repeating-conic-gradient(#111 0 25%, #f3f5fb 0 50%) 0 0 / 22px 22px; }
+.flag b { font-size: 50px; font-weight: 700; }
+.tag { position: absolute; left: 0; right: 0; top: 392px; text-align: center; font-size: 46px; font-weight: 600; }
+</style>
+</head>
+<body>
+<svg class="lines" viewBox="0 0 1600 500"><line x1="-100" y1="560" x2="460" y2="-60"/><line x1="380" y1="560" x2="940" y2="-60"/><line x1="1100" y1="560" x2="1660" y2="-60"/></svg>
+<div class="bar"><div class="name"><b>GRID<span>·</span>PULSE</b></div><div class="count"><b>LAP 1/1</b></div></div>
+<div class="flag"><i></i><b>LIVE, ON YOUR DELAY</b></div>
+<p class="tag">Run your F1 watchalong like a pit wall, without ever spoiling an overtake.</p>
+</body>
+</html>

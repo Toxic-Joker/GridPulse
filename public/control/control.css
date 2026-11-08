@@ -120,3 +120,17 @@ textarea { resize: vertical; }
 .locked code { display: block; padding: 10px; margin: 10px 0; background: var(--surface); overflow-wrap: anywhere; }
 
 @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; } }
+
+/* GridPulse's interim control room: one column of cards. MatchRoom's full desk
+   (preview, tabs, themes, deck links) is still to be ported. */
+#app > main { max-width: 1080px; margin: 0 auto; padding: 20px 20px 40px; display: grid; gap: 14px; }
+#app > main > h1 { font-size: 32px; }
+#app > main > p { margin: 0; color: var(--dim); }
+#app > main > section { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+#app > main section h3 { font-size: 13px; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; margin: 12px 0 6px; }
+#app > main section button { margin: 0 6px 6px 0; }
+#app > main section label { display: flex; align-items: center; gap: 8px; margin: 6px 0 10px; }
+#app > main section select { margin: 6px 0; }
+#app > main code { display: block; padding: 8px 10px; background: var(--bg); border-radius: 4px; overflow-wrap: anywhere; }
+#app > main input[type=password] { max-width: 420px; margin: 6px 6px 6px 0; }
+button.on { background: var(--on); color: var(--on-text); border-color: var(--on); }

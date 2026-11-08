@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GridPulse delay</title>
+<!-- README figure, rendered to docs/media/delay.png by scripts/readme-media.js. 1600×500. -->
+<style>
+@font-face { font-family: 'Barlow Condensed'; font-weight: 700; src: url('../../../public/vendor/fonts/barlow-condensed-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-weight: 600; src: url('../../../public/vendor/fonts/barlow-condensed-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-weight: 500; src: url('../../../public/vendor/fonts/barlow-latin-500-normal.woff2') format('woff2'); }
+html, body { margin: 0; width: 1600px; height: 500px; overflow: hidden; }
+body { background: radial-gradient(120% 120% at 30% 0%, #182240, #05070e 75%); color: #f3f5fb; font-family: 'Barlow Condensed', sans-serif; position: relative; }
+p { margin: 0; }
+.row { position: absolute; left: 70px; right: 70px; height: 150px; }
+.label { position: absolute; left: 0; top: 30px; }
+.label b { display: block; font-size: 40px; }
+.label span { font: 500 26px 'Barlow', sans-serif; color: #a3abc4; }
+.track { position: absolute; left: 350px; right: 0; top: 66px; height: 8px; background: #2a3350; }
+.tag { position: absolute; top: 40px; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 22px 0 0; background: #f3f5fb; color: #0b0d14; clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 14px 100%); white-space: nowrap; }
+.tag i { align-self: stretch; width: 14px; background: #3671c6; }
+.tag b { font-size: 34px; }
+.tag span { font-size: 30px; font-weight: 600; }
+.tag.early { outline: 4px solid #ff5a5a; }
+.note { position: absolute; top: 106px; font-size: 28px; font-weight: 600; white-space: nowrap; }
+.dot { position: absolute; top: 56px; width: 28px; height: 28px; border-radius: 50%; background: #ffd12e; box-shadow: 0 0 0 6px rgba(255,209,46,.25); }
+</style>
+</head>
+<body>
+<div class="row" style="top: 10px">
+  <div class="label"><b>On track</b><span>The pass happens</span></div>
+  <div class="track"></div>
+  <div class="dot" style="left: 470px"></div>
+  <p class="note" style="left: 420px; color: #a3abc4">Lap 12, Turn 4</p>
+</div>
+<div class="row" style="top: 160px">
+  <div class="label"><b>A normal overlay</b><span>Follows the live timing</span></div>
+  <div class="track"></div>
+  <div class="tag early" style="left: 410px"><i></i><b>Overtake</b><span>ALVES on DUVAL</span></div>
+  <p class="note" style="left: 380px; color: #ff7a7a">On screen 45 seconds before viewers see it</p>
+</div>
+<div class="row" style="top: 310px">
+  <div class="label"><b>GridPulse</b><span>Delay set to 45 s</span></div>
+  <div class="track"></div>
+  <p class="note" style="left: 640px; top: 12px; color: #a3abc4">45 seconds held back</p>
+  <div class="tag" style="left: 1080px"><i></i><b>Overtake</b><span>ALVES on DUVAL</span></div>
+  <p class="note" style="left: 1030px; color: #ffd12e">Same moment viewers see the pass</p>
+</div>
+</body>
+</html>
