@@ -94,7 +94,15 @@ As a streamer with F1 TV, I want exact live positions.
 - The token is pasted into the control room, stored only on the server, never sent to overlay pages or logs.
 - The control room shows whether the token is present and when it expires; when it's missing or expired the radar falls back to Estimated without interrupting the show.
 
-## v1.1 (next, not in v1)
+## v1.1: qualifying and practice (built 2026-11-08, to check against Las Vegas)
+
+Built from community knowledge of the feed (`SessionPart`, `NoEntries`, `BestLapTimes`, `Stats`, `KnockedOut`, checked against undercut-f1's 2024 Imola qualifying sample) before any qualifying was recorded. Las Vegas practice and qualifying (20–21 Nov 2026) will be recorded automatically; anything that differs gets fixed then.
+
+- **Qualifying and sprint qualifying:** session bar shows the part and its clock ("Q2 05:12", "SQ2" in sprint qualifying); the tower is a timesheet (best of the part, then gaps) with a red line under the last safe place, knocked-out cars faded and cars in the garage or on an out lap marked; the drop-zone widget shows who is out if the part ended now and the time to beat. Moments: a new part, fastest time (provisional pole in the final part), a car lapping out of the drop zone (and who drops in), all knockouts of a part as one moment, a deleted lap.
+- **Practice:** a timesheet tower, the session clock, new fastest time, deleted laps, flags.
+- **Rehearsals:** a fictional qualifying (Q1/Q2/Q3, 22 → 16 → 10 cars) and a 20-minute practice at Harbour Park, alongside the race.
+
+Original v1.1 list, for reference:
 
 - Qualifying mode: elimination line, car status (garage, out lap, flying lap, finished), segment clock, knocked-out and provisional-pole moments, knockout widget. Same for sprint qualifying.
 - Practice mode: best-lap tower, time-remaining clock, long-run pace, tyre usage, "quiet" layout.

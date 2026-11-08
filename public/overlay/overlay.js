@@ -17,7 +17,7 @@ const SIZE = FORMAT === 'portrait' ? { w: 1080, h: 1920 } : { w: 1920, h: 1080 }
 const SLOT_OF = {
   preview: 'leftTop', weather: 'leftTop', championship: 'leftBottom', projected: 'leftBottom',
   tower: 'rightTop', tyres: 'rightTop', socials: 'rightBottom', sponsor: 'rightBottom',
-  radar: 'bottom', waiting: 'full', results: 'full', radarFull: 'full', championshipFull: 'full',
+  radar: 'bottom', knockout: 'bottom', waiting: 'full', results: 'full', radarFull: 'full', championshipFull: 'full',
 };
 const PORTRAIT_AREA = { leftTop: 'main', rightTop: 'main', bottom: 'main', leftBottom: 'sub', rightBottom: 'sub', full: 'full' };
 const FLAG = {
@@ -74,14 +74,15 @@ if (LAYER !== 'front') stage.append(backdrop);
 if (LAYER !== 'back') stage.append(front);
 
 // ── Session clock (practice and qualifying count down) ───────────
-const clock = { ms: null, running: false, at: performance.now() };
+const clock = { ms: null, running: false, rate: 1, at: performance.now() };
 function syncClock(c) {
   if (!c) return;
   clock.ms = c.remainingMs;
   clock.running = c.running;
+  clock.rate = c.rate || 1;
   clock.at = performance.now();
 }
-const clockMs = () => (clock.ms === null ? null : Math.max(0, clock.ms - (clock.running ? performance.now() - clock.at : 0)));
+const clockMs = () => (clock.ms === null ? null : Math.max(0, clock.ms - (clock.running ? (performance.now() - clock.at) * clock.rate : 0)));
 
 // ── Drawing ──────────────────────────────────────────────────────
 function applyTheme() {
@@ -97,7 +98,8 @@ function applyTheme() {
 function countText(f) {
   if (['race', 'sprint'].includes(f.session.type)) return `${t('lap')} ${f.laps.current}${f.laps.total ? `/${f.laps.total}` : ''}`;
   const ms = clockMs();
-  return ms === null ? '' : formatClock(ms / 1000);
+  const part = f.session.part ? `${partName(f.session.part)} ` : '';
+  return ms === null ? part.trim() : `${part}${formatClock(ms / 1000)}`;
 }
 
 function drawBug() {
@@ -244,6 +246,8 @@ function readRaceControl() {
 const bannerQueue = [];
 let bannerActive = false;
 const surname = (e) => (e.driver ? e.driver.split(' ').slice(-1)[0] : e.code);
+// "Q2", or "SQ2" in sprint qualifying.
+const partName = (part) => `${state.frame?.session.type === 'sprint_qualifying' ? 'SQ' : 'Q'}${part}`;
 
 function describe(e) {
   const flagTitle = (s) => ({ sc: t('safetyCar'), vsc: t('vsc'), vsc_ending: t('vscEnding'), red: t('redFlag'), yellow: t('yellow'), green: t('trackClear') }[s]);
@@ -262,6 +266,11 @@ function describe(e) {
       if (!title) return null;
       return { title, line: '', colour: null, tone: { sc: 'orange', vsc: 'orange', vsc_ending: 'orange', red: 'red', yellow: 'yellow', green: 'green' }[e.status] };
     }
+    case 'quali_part': return { title: `${partName(e.part)}`, line: e.cut ? `${t('cutAfter')} P${e.cut}` : t('finalPart'), colour: null };
+    case 'session_fastest': return { title: e.pole ? t('provisionalPole') : t('fastestTime'), line: `${surname(e)} ${e.time}`, colour: e.teamColour, tone: 'purple', short: `${e.code} ${e.time}` };
+    case 'knockouts': return { title: `${t('knockedOut')} · ${partName(e.part)}`, line: e.cars.map((c) => c.code).join('  ·  '), colour: null, tone: 'red', seconds: 8 };
+    case 'escape': return { title: t('safe'), line: `${surname(e)} P${e.position}${e.pushed ? ` · ${surname(e.pushed)} ${t('dropsIn')}` : ''}`, colour: e.teamColour, tone: 'green', short: `${e.code} P${e.position}` };
+    case 'lap_deleted': return { title: t('lapDeleted'), line: e.code || '', colour: e.teamColour, short: `${t('lapDeleted')}: ${e.code || ''}` };
     case 'chequered': return { title: t('chequered'), line: e.winner ? `${surname(e.winner)} ${t('wins')}` : '', colour: e.winner?.teamColour, tone: 'chequered', podium: e.podium };
     default: return null;
   }
@@ -276,7 +285,7 @@ function penaltyText(text) {
 
 // Flags, leader changes and the like jump the queue and cut a minor banner short;
 // a banner that waited too long belongs to a moment viewers have already passed.
-const MAJOR = new Set(['lights_out', 'restart', 'new_leader', 'retirement', 'penalty', 'track_status', 'chequered']);
+const MAJOR = new Set(['lights_out', 'restart', 'new_leader', 'retirement', 'penalty', 'track_status', 'chequered', 'knockouts', 'quali_part', 'escape']);
 const BANNER_STALE_MS = 15000;
 let bannerTimer = null;
 let bannerMajor = false;

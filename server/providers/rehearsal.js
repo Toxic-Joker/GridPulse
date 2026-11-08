@@ -435,4 +435,6 @@ function ensureRehearsal(recordingsDir) {
   return REHEARSAL_ID;
 }
 
-module.exports = { generateRehearsal, ensureRehearsal, rehearsalCircuit, rehearsalStandings, rehearsalCalendar, REHEARSAL_ID, LAPS, TRACK_M, SEGMENTS };
+module.exports = { generateRehearsal, ensureRehearsal, rehearsalCircuit, rehearsalStandings, rehearsalCalendar, REHEARSAL_ID, LAPS, TRACK_M, SEGMENTS,
+  // Shared with the qualifying and practice rehearsals.
+  shared: { DRIVERS, TEAMS, rng, fmtLap, iso, rcmUtc, emptySectors, SECTOR_SEGMENTS, SEGMENT_M, DT, T0 } };

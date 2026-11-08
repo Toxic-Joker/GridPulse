@@ -115,7 +115,7 @@ class Feed {
   }
 
   snapshot(at) {
-    const { snapshot, events } = this.engine.ingest(normalizeSession(this.state.topics, this.state.segmentAt, at), at);
+    const { snapshot, events } = this.engine.ingest(normalizeSession(this.state.topics, this.state.segmentAt, at, { clockAt: this.state.clockAt, rate: this.rate() }), at);
     const first = !this.live;
     // The projection rides on the frame, so it goes on air with the order it was made from.
     if (this.base) snapshot.projected = projectChampionship(this.base, snapshot, this.weekend);
@@ -135,12 +135,16 @@ class Feed {
     this.onChange();
   }
 
+  // How fast session time runs against the wall clock: the replay speed, or 1 live.
+  rate() {
+    return this.source === 'replay' ? this.provider?.speed || 1 : 1;
+  }
+
   // Real positions when fresh ones arrive (F1 TV, or a recording that has them), otherwise estimated.
   radarFrame(snapshot, at) {
     const real = toRadarFrame(this.state.topics.Position, this.state.positionAt, snapshot, at, this.source === 'replay' ? 'replay' : 'live');
     if (real) return real;
-    const rate = this.source === 'replay' ? this.provider?.speed || 1 : 1;
-    return estimate(snapshot, this.circuit, at, rate);
+    return estimate(snapshot, this.circuit, at, this.rate());
   }
 
   needsTables() {
@@ -272,6 +276,11 @@ function describeEvent(e) {
     case 'retirement': return `Retired: ${e.code}`;
     case 'lap1_summary': return `Lap 1: ${e.gains.map((g) => `${g.code} +${g.change}`).join(', ') || 'no gains'}`;
     case 'chequered': return `Chequered flag: ${e.winner?.code ?? ''} wins`;
+    case 'quali_part': return `Q${e.part} starts${e.cut ? `, cut after P${e.cut}` : ''}`;
+    case 'session_fastest': return `${e.pole ? 'Provisional pole' : 'Fastest'}: ${e.code} ${e.time}`;
+    case 'knockouts': return `Knocked out in Q${e.part}: ${e.cars.map((c) => c.code).join(', ')}`;
+    case 'escape': return `${e.code} out of the drop zone to P${e.position}${e.pushed ? `, ${e.pushed.code} drops in` : ''}`;
+    case 'lap_deleted': return `Lap deleted: ${e.code ?? e.text}`;
     default: return e.type;
   }
 }

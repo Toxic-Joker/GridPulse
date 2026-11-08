@@ -216,6 +216,13 @@ All rules run on consecutive snapshots after the baseline.
 - **Spike 2, archive:** every file, any season, answers 401 since about 15 October 2026. FastF1 and undercut-f1 added F1 TV login for it.
 - **Real payload notes** (from the São Paulo GP recording): 22 cars; 22 mini-sectors per lap there (7 + 8 + 7); segment status 2048 = completed, 0 = not yet; `TrackStatus` codes 1/2/4/5/6/7; `SessionStatus` goes `Started` → `Finished` at the flag; `ExtrapolatedClock` keeps `Extrapolating: true` after the flag; `RaceControlMessages` patches add index keys; race control `Utc` has no time zone (it is UTC).
 
+## Qualifying and practice (built, unverified on a real session)
+
+- **normalize.js:** `session.part` from `TimingData.SessionPart`; `qualifying: { part, entries, cut }` from `NoEntries` (cut = last safe place, null in the final part); per driver `bestLaps` (`BestLapTimes`), `partBest`, `gapToFastest` (`Stats[part-1].TimeDiffToFastest`, or `TimeDiffToFastest` on the line in practice) and `run` (garage, out, track from `InPit`/`PitOut`).
+- **detectors/qualifying.js** (qualifying, sprint qualifying, practice): `quali_part`, `session_fastest` (`pole` in the final part), `knockouts` (all cars of a part, gathered for 1.5 s; the part comes from the position, since the flag can arrive after the next part has begun), `escape` (only with an improved lap: untimed cars all start below the cut), `lap_deleted` (race control "DELETED").
+- **Clock:** counts from when `ExtrapolatedClock` arrived (`TimingState.clockAt`) at the session's rate (replay speed), not from its `Utc`, so replays of other days count down properly.
+- **rehearsalQualifying.js:** the same timing-point simulation as the race, with garage → out lap → flying laps → in lap runs and track evolution through each part.
+
 ## Standings, countdown, auto-connect (built)
 
 - **Jolpica** (`providers/jolpica.js`): calendar (24 h cache), driver and constructor standings and sprint results (1 h), one request at a time. Loaded by `feed.refreshTables()` only while the championship, projected, full-screen championship or countdown widget is on, every 60 s, and published straight away (season data, not race data).

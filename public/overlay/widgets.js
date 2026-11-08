@@ -25,17 +25,22 @@ function towerData(state) {
   const mode = state.show.widgets.tower.opts?.show === 'gap' ? 'gap' : 'interval';
   const followed = new Set(state.show.followedDrivers || []);
   const race = ['race', 'sprint'].includes(f.session.type);
+  const cut = f.qualifying?.cut ?? null;
+  // Outside a race the tower is a timesheet: the leader's time, then gaps to it.
+  const timesheet = (d) => (d.position === 1 || !d.gapToFastest ? (d.partBest || '') : d.gapToFastest);
   return {
-    mode, page, pages, race,
+    mode, page, pages, race, part: f.session.part,
     rows: f.drivers.slice(page * TOWER_PAGE, (page + 1) * TOWER_PAGE).map((d) => ({
       position: d.position,
       code: d.code,
       colour: d.teamColour,
-      value: d.retired ? 'retired' : d.inPit ? 'pit' : d.position === 1 && race ? null : (race ? (mode === 'gap' ? d.gapToLeader : d.interval) : d.bestLap),
+      value: d.retired ? 'retired' : race ? (d.inPit ? 'pit' : d.position === 1 ? null : (mode === 'gap' ? d.gapToLeader : d.interval)) : timesheet(d),
+      run: race ? null : d.run,
       tyre: d.tyre,
       followed: followed.has(d.code),
       fastest: f.fastestLap?.number === d.number,
-      out: d.retired,
+      out: d.retired || d.knockedOut,
+      cutBelow: cut !== null && d.position === cut && !d.knockedOut,
     })),
   };
 }
@@ -45,9 +50,9 @@ function towerRender(d, { t }) {
   const label = (v) => (v === 'retired' ? t('retired') : v === 'pit' ? t('pit') : v);
   return h('div', { class: 'panel tower' },
     h('div', { class: 'panel-head' },
-      h('span', null, d.race ? t(d.mode) : t('lap')),
+      h('span', null, d.race ? t(d.mode) : d.part ? `Q${d.part} · ${t('timesheet')}` : t('timesheet')),
       d.pages > 1 ? h('span', { class: 'tower-page' }, `${d.page + 1}/${d.pages}`) : ''),
-    h('ol', { class: 'tower-rows' }, d.rows.map((r) => h('li', { class: `tower-row${r.followed ? ' followed' : ''}${r.out ? ' out' : ''}` },
+    h('ol', { class: 'tower-rows' }, d.rows.map((r) => h('li', { class: `tower-row${r.followed ? ' followed' : ''}${r.out ? ' out' : ''}${r.cutBelow ? ' cut-below' : ''}${r.run ? ` run-${r.run}` : ''}` },
       h('b', { class: 'tower-pos' }, r.position ?? ''),
       teamBar(r.colour),
       h('b', { class: 'tower-code' }, r.code),
@@ -192,6 +197,38 @@ function resultsRender(d, { t }) {
     h('div', { class: 'results-cols' }, h('ol', null, d.rows.slice(0, half).map(row)), h('ol', null, d.rows.slice(half).map(row))));
 }
 
+// ── Qualifying drop zone (under the camera): who is out if the session ended now ──
+function knockoutData(state) {
+  const f = state.frame;
+  const q = f?.qualifying;
+  if (!q || !q.cut) return q ? { final: true, part: q.part } : null;
+  const active = f.drivers.filter((d) => !d.knockedOut);
+  const line = active.find((d) => d.position === q.cut);
+  const toBeat = line?.partBest || '';
+  const secs = (v) => { const m = /^(?:(\d+):)?(\d+\.\d+)$/.exec(v || ''); return m ? (Number(m[1]) || 0) * 60 + Number(m[2]) : null; };
+  return {
+    part: q.part,
+    cut: q.cut,
+    toBeat,
+    toBeatCode: line?.code ?? '',
+    danger: active.filter((d) => d.position > q.cut).map((d) => ({
+      position: d.position, code: d.code, colour: d.teamColour, run: d.run,
+      short: d.partBest && secs(toBeat) !== null ? `+${(secs(d.partBest) - secs(toBeat)).toFixed(3)}` : '',
+    })),
+  };
+}
+
+function knockoutRender(d, { t }) {
+  if (!d) return h('div', { class: 'panel' }, h('div', { class: 'panel-head' }, h('span', null, t('dropZone'))), h('p', { class: 'empty-note' }, t('dropZoneNote')));
+  if (d.final) return h('div', { class: 'panel' }, h('div', { class: 'panel-head' }, h('span', null, `Q${d.part}`)), h('p', { class: 'empty-note' }, t('finalPart')));
+  return h('div', { class: 'panel knockout' },
+    h('div', { class: 'panel-head' }, h('span', null, `Q${d.part} · ${t('dropZone')}`),
+      h('span', { class: 'panel-sub' }, d.toBeat ? `${t('timeToBeat')} ${d.toBeat} (${d.toBeatCode})` : `${t('cutAfter')} P${d.cut}`)),
+    h('div', { class: 'ko-cars' }, d.danger.map((c) => h('div', { class: `ko-car run-${c.run}` },
+      teamBar(c.colour), h('b', null, `P${c.position}`), h('span', null, c.code),
+      h('small', null, c.run === 'garage' ? t('pit') : c.run === 'out' ? t('outLap') : c.short || t('noTime'))))));
+}
+
 // ── Socials and sponsor (from MatchRoom) ──
 function socialsData(state) {
   const list = state.show.socials || [];
@@ -293,5 +330,6 @@ export const WIDGETS = {
   weather: { data: weatherData, render: weatherRender },
   preview: { data: previewData, render: previewRender },
   tyres: { data: tyresData, render: tyresRender },
+  knockout: { data: knockoutData, render: knockoutRender },
 };
 

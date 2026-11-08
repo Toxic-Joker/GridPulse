@@ -52,6 +52,14 @@ test('track status codes map to flags, with the time of the change', () => {
   assert.strictEqual(snapshotOf([{ topic: 'TrackStatus', data: { Status: '5' } }]).track.status, 'red');
 });
 
+test('a replayed clock counts from when its message arrived, at the replay speed', () => {
+  const state = new TimingState();
+  state.apply({ topic: '*', data: raceState(), at: 1000 });
+  const s = normalizeSession(state.topics, state.segmentAt, 11000, { clockAt: state.clockAt, rate: 20 });
+  assert.strictEqual(s.clock.remainingMs, 100 * 60000 - 10000 * 20);
+  assert.strictEqual(s.clock.rate, 20);
+});
+
 test('the session clock runs down from its last update, and stops at the flag', () => {
   assert.strictEqual(snapshotOf().clock.remainingMs, 100 * 60000 - 30000);
   const finished = snapshotOf([{ topic: 'SessionStatus', data: { Status: 'Finished' } }]);

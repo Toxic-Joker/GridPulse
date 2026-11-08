@@ -16,6 +16,7 @@ const { F1LiveProvider } = require('./providers/f1Live');
 const { ReplayProvider } = require('./providers/replay');
 const { isRecordingId } = require('./providers/recordings');
 const { ensureRehearsal } = require('./providers/rehearsal');
+const { ensureSessionRehearsals } = require('./providers/rehearsalQualifying');
 const { MultiViewerProvider } = require('./providers/multiviewer');
 const { JolpicaProvider } = require('./providers/jolpica');
 const { dueSession, nextSession } = require('./domain/schedule');
@@ -54,6 +55,7 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
 
   // The fictional rehearsal race is always there, so a first run has something to play.
   const rehearsalId = ensureRehearsal(path.join(dataDir, 'recordings'));
+  ensureSessionRehearsals(path.join(dataDir, 'recordings'));
   if (!show.replay.recording) show = { ...show, replay: { ...show.replay, recording: rehearsalId } };
 
   function addLog(message) {

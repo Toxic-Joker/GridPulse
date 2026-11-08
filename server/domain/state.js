@@ -62,6 +62,8 @@ class TimingState {
     this.segmentAt = {};
     // When the last real position sample arrived (F1 TV), so stale positions are not shown.
     this.positionAt = null;
+    // When the session clock last arrived, so it can count down from there.
+    this.clockAt = null;
   }
 
   /**
@@ -73,6 +75,7 @@ class TimingState {
     if (topic === '*') {
       this.topics = {};
       this.segmentAt = {};
+      this.clockAt = null;
       Object.entries(data || {}).forEach(([t, d]) => this.apply({ topic: t, data: d, at }));
       return;
     }
@@ -91,6 +94,7 @@ class TimingState {
         if (segmentsTouched(line)) this.segmentAt[number] = at;
       });
     }
+    if (name === 'ExtrapolatedClock') this.clockAt = at;
     this.topics[name] = mergePatch(this.topics[name], payload);
   }
 }

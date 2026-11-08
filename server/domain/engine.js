@@ -3,9 +3,10 @@
 // joining on lap 40 must not replay 40 laps of moments on air.
 
 const race = require('./detectors/race');
+const qualifying = require('./detectors/qualifying');
 
-// Session types without their own detectors in v1 only report flags and status.
-const DETECTORS = { race, sprint: race };
+// Race and sprint share their moments; qualifying, sprint qualifying and practice share theirs.
+const DETECTORS = { race, sprint: race, qualifying, sprint_qualifying: qualifying, practice: qualifying };
 
 class SessionEngine {
   constructor() {

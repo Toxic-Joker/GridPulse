@@ -14,6 +14,7 @@ const WIDGETS = {
   socials: { slot: 'rightBottom', label: 'Socials', group: 'Right, bottom' },
   sponsor: { slot: 'rightBottom', label: 'Sponsor', group: 'Right, bottom' },
   radar: { slot: 'bottom', label: 'Track radar', group: 'Under the camera', options: { mode: ['2d', '3d'] } },
+  knockout: { slot: 'bottom', label: 'Qualifying drop zone', group: 'Under the camera' },
   waiting: { slot: 'full', label: 'Countdown screen', group: 'Full screen' },
   results: { slot: 'full', label: 'Results and podium', group: 'Full screen' },
   radarFull: { slot: 'full', label: 'Track radar', group: 'Full screen' },
@@ -40,6 +41,11 @@ const DISPLAY = {
   restart: ['fullscreen', 'banner', 'off'],
   lap1_summary: ['banner', 'off'],
   chequered: ['fullscreen', 'banner', 'off'],
+  quali_part: ['banner', 'off'],
+  session_fastest: ['banner', 'ticker', 'off'],
+  knockouts: ['fullscreen', 'banner', 'off'],
+  escape: ['banner', 'ticker', 'off'],
+  lap_deleted: ['banner', 'ticker', 'off'],
 };
 const REPLAY_SPEEDS = [1, 5, 20];
 const MAX_DELAY = 300;
@@ -63,7 +69,7 @@ function defaultShow() {
     lang: 'en',
     background: '',
     cameraGuide: false,
-    auto: { lights_out: 'fullscreen', overtake: 'banner', new_leader: 'banner', pit: 'banner', fastest_lap: 'banner', track_status: 'banner', penalty: 'banner', retirement: 'banner', restart: 'banner', lap1_summary: 'banner', chequered: 'fullscreen' },
+    auto: { lights_out: 'fullscreen', overtake: 'banner', new_leader: 'banner', pit: 'banner', fastest_lap: 'banner', track_status: 'banner', penalty: 'banner', retirement: 'banner', restart: 'banner', lap1_summary: 'banner', chequered: 'fullscreen', quali_part: 'banner', session_fastest: 'banner', knockouts: 'banner', escape: 'banner', lap_deleted: 'ticker' },
     socials: [{ platform: 'x', handle: '@yourchannel' }],
     sponsor: { text: '', logo: '' },
     countdown: { title: '', target: null },

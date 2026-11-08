@@ -11,6 +11,7 @@ const STRINGS = {
     gains: 'Gains', losses: 'Losses', laps: 'laps', waitingMap: 'Loading the circuit map',
     championship: 'Championship', drivers: 'Drivers', constructors: 'Constructors', projected: 'Projected championship', projectedNote: 'Shown during a race or sprint', afterRound: 'after round', loading: 'Loading', nextSession: 'Next session', noSession: 'No session scheduled', daysShort: 'd', result: 'Result', runningOrder: 'Running order',
     follow: 'Follow', presentedBy: 'Presented by', weather: 'Weather', trackTemp: 'Track', airTemp: 'Air', humidity: 'Humidity', wind: 'Wind', rain: 'Rain', dry: 'Dry', grid: 'Grid', tyreStrategy: 'Tyre strategy',
+    timesheet: 'Timesheet', cutAfter: 'Cut after', finalPart: 'Shoot-out for pole', provisionalPole: 'Provisional pole', fastestTime: 'Fastest time', knockedOut: 'Knocked out', safe: 'Out of the drop zone', dropsIn: 'drops in', lapDeleted: 'Lap deleted', dropZone: 'Drop zone', dropZoneNote: 'Shown in qualifying', timeToBeat: 'To beat', noTime: 'No time', outLap: 'Out lap',
   },
   fr: {
     race: 'Course', sprint: 'Sprint', qualifying: 'Qualifications', sprint_qualifying: 'Qualifications sprint', practice: 'Essais',
@@ -22,6 +23,7 @@ const STRINGS = {
     gains: 'Gagnés', losses: 'Perdus', laps: 'tours', waitingMap: 'Chargement du circuit',
     championship: 'Championnat', drivers: 'Pilotes', constructors: 'Constructeurs', projected: 'Championnat en direct', projectedNote: 'Affiché pendant une course ou un sprint', afterRound: 'après la manche', loading: 'Chargement', nextSession: 'Prochaine séance', noSession: 'Aucune séance prévue', daysShort: 'j', result: 'Résultat', runningOrder: 'Classement provisoire',
     follow: 'Suivez', presentedBy: 'Présenté par', weather: 'Météo', trackTemp: 'Piste', airTemp: 'Air', humidity: 'Humidité', wind: 'Vent', rain: 'Pluie', dry: 'Sec', grid: 'Grille', tyreStrategy: 'Stratégie pneus',
+    timesheet: 'Classement', cutAfter: 'Éliminés après', finalPart: 'Duel pour la pole', provisionalPole: 'Pole provisoire', fastestTime: 'Meilleur temps', knockedOut: 'Éliminés', safe: 'Hors de la zone rouge', dropsIn: 'y tombe', lapDeleted: 'Tour annulé', dropZone: 'Zone rouge', dropZoneNote: 'Affiché en qualifications', timeToBeat: 'À battre', noTime: 'Sans temps', outLap: 'Tour de sortie',
   },
   es: {
     race: 'Carrera', sprint: 'Sprint', qualifying: 'Clasificación', sprint_qualifying: 'Clasificación sprint', practice: 'Libres',
@@ -33,6 +35,7 @@ const STRINGS = {
     gains: 'Ganan', losses: 'Pierden', laps: 'vueltas', waitingMap: 'Cargando el circuito',
     championship: 'Campeonato', drivers: 'Pilotos', constructors: 'Constructores', projected: 'Campeonato en vivo', projectedNote: 'Se muestra durante una carrera o sprint', afterRound: 'tras la ronda', loading: 'Cargando', nextSession: 'Próxima sesión', noSession: 'No hay sesión prevista', daysShort: 'd', result: 'Resultado', runningOrder: 'Orden provisional',
     follow: 'Sígueme', presentedBy: 'Presentado por', weather: 'Clima', trackTemp: 'Pista', airTemp: 'Aire', humidity: 'Humedad', wind: 'Viento', rain: 'Lluvia', dry: 'Seco', grid: 'Parrilla', tyreStrategy: 'Estrategia de neumáticos',
+    timesheet: 'Tiempos', cutAfter: 'Corte tras', finalPart: 'Lucha por la pole', provisionalPole: 'Pole provisional', fastestTime: 'Mejor tiempo', knockedOut: 'Eliminados', safe: 'Fuera de la zona de eliminación', dropsIn: 'cae', lapDeleted: 'Vuelta anulada', dropZone: 'Zona de eliminación', dropZoneNote: 'Se muestra en clasificación', timeToBeat: 'A batir', noTime: 'Sin tiempo', outLap: 'Vuelta de salida',
   },
   pt: {
     race: 'Corrida', sprint: 'Sprint', qualifying: 'Classificação', sprint_qualifying: 'Classificação sprint', practice: 'Treino livre',
@@ -44,6 +47,7 @@ const STRINGS = {
     gains: 'Ganhos', losses: 'Perdas', laps: 'voltas', waitingMap: 'Carregando o circuito',
     championship: 'Campeonato', drivers: 'Pilotos', constructors: 'Construtores', projected: 'Campeonato ao vivo', projectedNote: 'Exibido durante uma corrida ou sprint', afterRound: 'após a etapa', loading: 'Carregando', nextSession: 'Próxima sessão', noSession: 'Nenhuma sessão prevista', daysShort: 'd', result: 'Resultado', runningOrder: 'Ordem provisória',
     follow: 'Siga', presentedBy: 'Apresentado por', weather: 'Tempo', trackTemp: 'Pista', airTemp: 'Ar', humidity: 'Umidade', wind: 'Vento', rain: 'Chuva', dry: 'Seco', grid: 'Grid', tyreStrategy: 'Estratégia de pneus',
+    timesheet: 'Tempos', cutAfter: 'Corte após', finalPart: 'Disputa pela pole', provisionalPole: 'Pole provisória', fastestTime: 'Melhor tempo', knockedOut: 'Eliminados', safe: 'Fora da zona de eliminação', dropsIn: 'cai', lapDeleted: 'Volta anulada', dropZone: 'Zona de eliminação', dropZoneNote: 'Exibido na classificação', timeToBeat: 'A bater', noTime: 'Sem tempo', outLap: 'Volta de saída',
   },
 };
 

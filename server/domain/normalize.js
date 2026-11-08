@@ -57,13 +57,15 @@ function parseDuration(text) {
 }
 
 // The feed keeps "Extrapolating" on after the flag, so the clock only runs in a running session.
-function clock(extrapolated, at, sessionRunning) {
+// It counts from when the clock message arrived, at the session's speed (a replay runs faster),
+// so a recording from another day still counts down properly.
+function clock(extrapolated, at, sessionRunning, { clockAt = null, rate = 1 } = {}) {
   const remaining = parseDuration(extrapolated?.Remaining);
   const running = sessionRunning && Boolean(extrapolated?.Extrapolating);
-  if (remaining === null) return { remainingMs: null, running: false, rate: 1 };
-  const from = utcMs(extrapolated.Utc);
-  const passed = running && from !== null ? Math.max(0, at - from) : 0;
-  return { remainingMs: Math.max(0, remaining - passed), running, rate: 1 };
+  if (remaining === null) return { remainingMs: null, running: false, rate };
+  const from = clockAt ?? utcMs(extrapolated.Utc);
+  const passed = running && from !== null ? Math.max(0, at - from) * rate : 0;
+  return { remainingMs: Math.max(0, remaining - passed), running, rate };
 }
 
 function tyre(appLine) {
@@ -90,7 +92,26 @@ function progress(timingLine, segmentAt) {
   return { sector, segment, segmentsPerLap, at: segmentAt ?? null };
 }
 
-function driverRow(number, driver, timing, app, segmentAt) {
+// Qualifying keeps a best lap and a gap to the fastest for each part (Q1, Q2, Q3);
+// practice puts the gap on the line itself.
+function bestOfPart(timing, part) {
+  const list = values(timing?.BestLapTimes);
+  return part ? (list[part - 1]?.Value || '') : (timing?.BestLapTime?.Value || '');
+}
+
+function gapToFastest(timing, part) {
+  const stats = values(timing?.Stats);
+  return (part ? stats[part - 1]?.TimeDiffToFastest : null) ?? timing?.TimeDiffToFastest ?? '';
+}
+
+// Where a car is in its run: in the garage, on an out lap, or on track.
+function runState(timing) {
+  if (timing?.InPit) return 'garage';
+  if (timing?.PitOut) return 'out';
+  return 'track';
+}
+
+function driverRow(number, driver, timing, app, segmentAt, part) {
   return {
     number,
     code: driver?.Tla ?? number,
@@ -110,18 +131,22 @@ function driverRow(number, driver, timing, app, segmentAt) {
     retired: Boolean(timing?.Retired),
     stopped: Boolean(timing?.Stopped),
     knockedOut: Boolean(timing?.KnockedOut),
+    bestLaps: values(timing?.BestLapTimes).map((b) => b?.Value || ''),
+    partBest: bestOfPart(timing, part),
+    gapToFastest: gapToFastest(timing, part),
+    run: runState(timing),
     tyre: tyre(app),
     stints: values(app?.Stints).map((s) => ({ compound: COMPOUNDS.includes(s.Compound) ? s.Compound : 'UNKNOWN', laps: num(s.TotalLaps) ?? 0, isNew: s.New === true || s.New === 'true' })),
     progress: progress(timing, segmentAt),
   };
 }
 
-function drivers(topics, segmentAt) {
+function drivers(topics, segmentAt, part) {
   const list = topics.DriverList || {};
   const lines = topics.TimingData?.Lines || {};
   const app = topics.TimingAppData?.Lines || {};
   const numbers = new Set([...Object.keys(list), ...Object.keys(lines)].filter((k) => k !== '_kf'));
-  const rows = [...numbers].map((n) => driverRow(n, list[n], lines[n], app[n], segmentAt[n]));
+  const rows = [...numbers].map((n) => driverRow(n, list[n], lines[n], app[n], segmentAt[n], part));
   // Cars without a position (before the session) keep the feed's driver list order.
   return rows.sort((a, b) => (a.position ?? 999) - (b.position ?? 999) || (num(list[a.number]?.Line) ?? 999) - (num(list[b.number]?.Line) ?? 999));
 }
@@ -160,20 +185,26 @@ function weather(w) {
  * @param {number} at
  * @returns {import('./types').SessionSnapshot}
  */
-function normalizeSession(topics, segmentAt, at) {
+function normalizeSession(topics, segmentAt, at, timing = {}) {
   const trackCode = topics.TrackStatus?.Status;
   const status = STATUS[topics.SessionStatus?.Status] ?? 'pre';
+  const info = session(topics.SessionInfo);
+  const qualifying = ['qualifying', 'sprint_qualifying'].includes(info.type);
+  const part = qualifying ? num(topics.TimingData?.SessionPart) : null;
+  const entries = qualifying ? values(topics.TimingData?.NoEntries).map(num).filter((n) => n !== null) : [];
   return {
     at,
-    session: session(topics.SessionInfo),
+    session: { ...info, part },
     status,
+    // Qualifying: how many cars start each part, and the last safe position in this one (none in the final part).
+    qualifying: qualifying ? { part, entries, cut: part && entries[part] ? entries[part] : null } : null,
     track: {
       status: TRACK[trackCode] ?? TRACK_BY_NAME[topics.TrackStatus?.Message] ?? 'green',
       since: trackSince(topics.SessionData, at),
     },
     laps: { current: num(topics.LapCount?.CurrentLap) ?? 0, total: num(topics.LapCount?.TotalLaps) },
-    clock: clock(topics.ExtrapolatedClock, at, status === 'running'),
-    drivers: drivers(topics, segmentAt || {}),
+    clock: clock(topics.ExtrapolatedClock, at, status === 'running', timing),
+    drivers: drivers(topics, segmentAt || {}, part),
     fastestLap: fastestLap(topics.TimingStats),
     raceControl: raceControl(topics.RaceControlMessages),
     weather: weather(topics.WeatherData),
