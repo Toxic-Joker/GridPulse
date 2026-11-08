@@ -16,7 +16,7 @@ A solo or small-team streamer on Twitch, YouTube or Kick who watches F1 sessions
 
 | Goal | Metric for v1 |
 |---|---|
-| The overlay runs a whole session without anyone touching it | A full race replayed from the archive runs start to flag with zero operator actions and no console errors |
+| The overlay runs a whole session without anyone touching it | A full recorded race replayed runs start to flag with zero operator actions and no console errors |
 | No spoilers | With the delay set, no on-air change (order, flag, event) appears before the matching moment on the streamer's TV, within ±2 s of the set delay |
 | Free to run | Every v1 feature works with no paid account. The F1 TV token only upgrades the radar |
 | Fast to set up | From `git clone` to an overlay in OBS showing the rehearsal replay in under 5 minutes |
@@ -28,13 +28,16 @@ v1 covers **race and sprint** sessions fully. For practice and qualifying, v1 sh
 
 ### User stories
 
-**1. Rehearsal from a real past race**
-As a streamer, I want to try the overlay on a real finished race before race day, so I can set up OBS without waiting for a live session.
+**1. Rehearsal from a real race**
+As a streamer, I want to try the overlay on a real race before race day, so I can set up OBS without waiting for a live session.
+
+Since about 15 October 2026, F1's archive of past sessions needs an F1 TV login (spike 2), so free rehearsals come from GridPulse's own recordings.
 - Works with no account or key.
-- The control room lists finished race and sprint sessions of the current and previous season. Choosing one downloads it once and caches it under `data/`.
-- F1's archive index can be unavailable (it answered 401 on 2026-11-08), so the list is built from the calendar plus every session GridPulse has seen live. If a session still can't be found, the streamer can paste its archive path.
-- Replay speed is adjustable (1×, 5×, 20×), and the replay goes through exactly the same pipeline as live data.
-- If the download fails, the control room says so plainly and keeps the last cached session available.
+- Every live session GridPulse follows is recorded to `data/recordings/`. The control room lists the recordings, newest first.
+- Replay speed is adjustable (1×, 5×, 20×), and the replay goes through exactly the same pipeline as live data. Long quiet stretches (red flags, the wait before the start) are shortened.
+- A recording still being written, or cut off, plays up to its last complete line.
+- A first-time user always has the **rehearsal race**: a fictional 20-lap "Harbour Grand Prix" (22 fictional drivers, 11 teams) that GridPulse writes on first run. It has a pit stop for every finisher, a track-limits deletion, a time penalty, a retirement under a safety car and the chequered flag, and plays in about 1.5 minutes at 20×. It is selected by default until the streamer picks another recording.
+- With an F1 TV token, past races can also be imported from F1's archive into the same format (v1.1).
 
 **2. Follow a live race or sprint automatically**
 As a streamer, I want the overlay to connect to the live session by itself, so I can focus on commentating.
@@ -109,14 +112,16 @@ As a streamer with F1 TV, I want exact live positions.
 - **Budget:** free. No paid service required for any v1 feature.
 - **Platform:** Node 20+, runs locally (`npm start` or Docker), overlays are OBS browser sources at 1920×1080.
 - **Legal:** PolyForm Noncommercial, like MatchRoom. Data comes from unofficial, undocumented F1 sources: noncommercial use only, no F1 trademarks. termf1 (no licence) and undercut-f1 (GPL-3) are reading references only, no copied code.
-- **Data source risk:** F1 can change or gate the live feed at any time (it did in 2025). The archive replay must keep working as rehearsal even if live breaks.
+- **Data source risk:** F1 can change or gate its feeds at any time (positions in 2025, the archive in October 2026). Replaying recordings must keep working even if live breaks.
 - **Timeline:** no fixed deadline.
 
 ## Open questions
 
-1. Does the free live feed still connect without an account from Node, and is it classic SignalR or SignalR Core? (Spike 1.)
-2. Can 2026 sessions be listed and downloaded from the archive when the year index returns 401? (Spike 2.)
+1. ~~Does the free live feed still connect without an account?~~ **Yes** (spike 1, 2026-11-08): SignalR Core via `@microsoft/signalr`, anonymous. Positions, car telemetry and the championship prediction need F1 TV; everything else arrives.
+2. ~~Can past sessions be downloaded from the archive?~~ **Not for free** (spike 2): every archive file has answered 401 since about 15 October 2026 (FastF1 #978, undercut-f1 #252). It needs an F1 TV Access login.
 3. Is the estimated radar good enough to ship? Acceptance: order always matches the tower; on a past race, a car's estimated spot is within one mini-sector of its real spot at least 90% of the time. (Spike 4.)
 4. What does the 2026 feed send for active aero and overtake mode, and is any of it worth showing? (Spike 5.)
 5. How long before a session can we connect, and does the feed send data during the formation lap and red-flag stoppages? (Answered by recording one live weekend.)
-6. Can a session's archive path be derived reliably from the calendar (date, meeting name, session name), or only learned from `SessionInfo.Path`? (Spike 2.)
+6. ~~Can archive paths be derived from the calendar?~~ No longer needed: free rehearsals use recordings. `SessionInfo.Path` is in every recording for a later F1 TV import.
+7. ~~What does a first-time user rehearse with?~~ **The rehearsal race** (decision D14).
+8. ~~How do we test the estimated radar's accuracy without archive positions?~~ Against the rehearsal race, which records every car's true distance each second. One F1 TV recording later would confirm it on real data.

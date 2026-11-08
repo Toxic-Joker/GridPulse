@@ -9,7 +9,8 @@
 /** @typedef {'live'|'estimated'|'replay'} RadarMode */
 
 /**
- * One raw message from a provider. `topic` has no `.z` suffix once decoded.
+ * One raw message from a provider. Topic "*" carries a full state (the Subscribe
+ * reply, or the first line of a recording); any other topic is a patch.
  * @typedef {{ topic: string, data: object, at: number }} FeedMessage
  */
 
@@ -62,6 +63,7 @@
 
 /**
  * @typedef {object} SessionSnapshot
+ * @property {number} at              When the snapshot was taken.
  * @property {SessionInfo} session
  * @property {SessionStatus} status
  * @property {{ status: TrackStatus, since: number }} track

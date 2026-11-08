@@ -9,7 +9,7 @@ Node 20+ (CommonJS server), Express 5, socket.io 4, `@microsoft/signalr`, `doten
 
 ## Data sources (all free)
 - F1 live feed (SignalR Core) — timing, flags, tyres, race control. Positions only with the user's F1 TV token.
-- F1 static archive — full past sessions incl. positions → rehearsal.
+- GridPulse's own recordings of live sessions (data/recordings) → rehearsal, plus a generated fictional race (rehearsal.js) for first runs. F1's archive needs F1 TV since Oct 2026.
 - Jolpica — calendar, standings, results. MultiViewer — circuit outlines.
 - **Not** OpenF1 (locked during live sessions), **not** any paid API.
 
@@ -20,7 +20,7 @@ Radar: `positions.js` (real) or `estimator.js` (estimated) → `RadarFrame` 4 Hz
 ## Folder map
 ```
 server/domain/     pure logic, no I/O (state, normalize, engine, detectors/, points, estimator, positions, track, delayLine, types)
-server/providers/  I/O only (f1Live, archive, jolpica, multiviewer, cache)
+server/providers/  I/O only (f1Live, recordings, replay, rehearsal, archive, jolpica, multiviewer, cache)
 server/            index, app (sockets/auth), feed (runs a session), show (widgets/actions), secrets
 public/overlay/    OBS page; public/control/ control room; public/shared/
 test/              domain/, server/, fixtures/ (synthetic only)
@@ -38,7 +38,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 1. The server owns the show; browsers only render state they're sent.
 2. First snapshot (and every reconnect) is a baseline: announce nothing that already happened.
 3. All feed data goes through the delay line; operator actions don't.
-4. Live and replay emit the same raw F1 payloads through the same pipeline.
+4. Live and replay emit the same raw F1 payloads through the same pipeline. Topic "*" = full state → re-baseline.
 5. Estimated data is labelled on air. Radar order never contradicts the tower.
 6. Overtakes: green/yellow only, lap ≥ 2, no pit/retired cars, same lap, debounced, never after the flag.
 7. Never hard-code grid size (22 cars in 2026) or quali cut positions.

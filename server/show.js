@@ -52,7 +52,7 @@ function defaultShow() {
   widgets.radar.opts = { mode: '2d' };
   return {
     source: 'replay',
-    replay: { path: null, speed: 20 },
+    replay: { recording: null, speed: 20 },
     widgets,
     delaySeconds: 0,
     themeId: 'night',

@@ -13,7 +13,9 @@ const { WIDGETS, THEMES, LANGS, DISPLAY, SOCIAL_PLATFORMS, REPLAY_SPEEDS, MAX_DE
 const { Feed } = require('./feed');
 const { Secrets } = require('./secrets');
 const { F1LiveProvider } = require('./providers/f1Live');
-const { ArchiveProvider, isArchivePath } = require('./providers/archive');
+const { ReplayProvider } = require('./providers/replay');
+const { isRecordingId } = require('./providers/recordings');
+const { ensureRehearsal } = require('./providers/rehearsal');
 
 const LOG_SIZE = 60;
 
@@ -45,15 +47,21 @@ function createApp({ env = process.env, dataDir, providers: providersOverride } 
   let show = reviveShow(saved);
   const log = [];
 
+  // The fictional rehearsal race is always there, so a first run has something to play.
+  const rehearsalId = ensureRehearsal(path.join(dataDir, 'recordings'));
+  if (!show.replay.recording) show = { ...show, replay: { ...show.replay, recording: rehearsalId } };
+
   function addLog(message) {
     log.unshift({ at: Date.now(), message: cleanText(secrets.redact(message), 200) });
     log.length = Math.min(log.length, LOG_SIZE);
   }
 
   const providers = providersOverride || {
-    live: new F1LiveProvider({ getToken: () => secrets.f1tvToken(), log: addLog }),
-    replay: new ArchiveProvider({ dataDir, log: addLog }),
+    live: new F1LiveProvider({ dataDir, getToken: () => secrets.f1tvToken(), log: addLog }),
+    replay: new ReplayProvider({ dataDir, log: addLog }),
   };
+  providers.replay?.setSpeed?.(show.replay.speed);
+  if (show.replay.recording) providers.replay?.select?.(show.replay.recording);
 
   const app = express();
   app.disable('x-powered-by');
@@ -134,14 +142,24 @@ function createApp({ env = process.env, dataDir, providers: providersOverride } 
     },
   });
 
+  function followSource(source) {
+    feed.follow(source).catch((err) => addLog(`Could not follow the session: ${err.message}`)).finally(publishControl);
+  }
+
   function runAction(action) {
     const name = action?.name;
     if (name === 'follow') {
       const source = action.source === 'live' ? 'live' : 'replay';
-      if (source === 'replay' && action.path !== undefined && !isArchivePath(action.path)) throw new ActionError('That is not a valid archive path');
-      show = { ...show, source, replay: { ...show.replay, path: source === 'replay' ? action.path ?? show.replay.path : show.replay.path } };
-      feed.follow(source);
-      addLog(source === 'live' ? 'Following the live session' : `Replaying ${show.replay.path || 'nothing yet'}`);
+      if (source === 'replay') {
+        const recording = action.recording ?? show.replay.recording;
+        if (!isRecordingId(recording) || !providers.replay.list().some((r) => r.id === recording)) throw new ActionError('Choose a recording to replay');
+        providers.replay.select(recording);
+        show = { ...show, source, replay: { ...show.replay, recording } };
+      } else {
+        show = { ...show, source };
+      }
+      followSource(source);
+      addLog(source === 'live' ? 'Connecting to the live session' : `Replaying ${show.replay.recording}`);
     } else if (name === 'f1tvToken') {
       try { secrets.setF1tvToken(action.token); } catch (err) { throw new ActionError(err.message); }
       addLog(secrets.publicView().present ? 'F1 TV token saved' : 'F1 TV token removed');
@@ -183,7 +201,9 @@ function createApp({ env = process.env, dataDir, providers: providersOverride } 
     return res.status(401).json({ error: 'Control token missing or wrong' });
   }
 
-  // TODO(rehearsal): GET /api/sessions?season= → archive.list(season) for the session picker.
+  app.get('/api/recordings', requireControl, (req, res) => {
+    res.json({ recordings: providers.replay?.list?.() ?? [] });
+  });
 
   // Plain GET links, so a Stream Deck "Website" key (background mode) or Companion can press them.
   function deck(res, action) {
@@ -231,7 +251,8 @@ function createApp({ env = process.env, dataDir, providers: providersOverride } 
 
   function start() {
     feed.setDelay(show.delaySeconds);
-    feed.follow(show.source === 'live' ? 'live' : 'replay');
+    if (show.source === 'live') followSource('live');
+    else if (show.replay.recording && providers.replay?.list?.().some((r) => r.id === show.replay.recording)) followSource('replay');
   }
 
   function close() {

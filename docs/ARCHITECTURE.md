@@ -36,12 +36,13 @@ No existing JS/TS repo covers an F1 OBS overlay (`gh search repos "f1 overlay ob
 flowchart LR
   subgraph Sources
     LIVE[F1 live feed<br/>SignalR Core]
-    ARCH[F1 static archive]
+    REC[(data/recordings)]
     JOL[Jolpica]
     MV[MultiViewer]
   end
   LIVE --> F1L[providers/f1Live.js]
-  ARCH --> AR[providers/archive.js<br/>download + replay]
+  F1L -. records .-> REC
+  REC --> AR[providers/replay.js<br/>replay recordings]
   F1L -- FeedMessage --> ST[domain/state.js<br/>merge patches]
   AR -- FeedMessage --> ST
   ST --> NZ[domain/normalize.js<br/>state → SessionSnapshot]
@@ -64,7 +65,7 @@ flowchart LR
 
 ### Pipeline in words
 
-1. A **provider** produces `FeedMessage`s: `{ topic, data, at }`. Live: from SignalR, `at` = arrival time. Replay: from archive `.jsonStream` files, `at` = replay clock. Both emit the same raw F1 payloads, so rehearsal runs the real pipeline (MatchRoom's simulator rule).
+1. A **provider** produces `FeedMessage`s: `{ topic, data, at }`. Live: from SignalR. Replay: from GridPulse's own recordings. `feed.js` stamps `at` with the wall clock on arrival. Both emit the same raw F1 payloads, so rehearsal runs the real pipeline (MatchRoom's simulator rule).
 2. **`state.js`** keeps one `TimingState`: the full, merged F1 state. The feed sends partial patches (objects keyed by index or driver number, `_deleted` lists), and `.z` topics are base64 + raw deflate. Pure merge function plus a small class holding the result.
 3. **`normalize.js`** turns `TimingState` into a `SessionSnapshot` (pure). Runs at most 4 times a second (throttled in `feed.js`), not on every patch.
 4. **`engine.js`** compares snapshots: first snapshot is a baseline, then detectors produce `RaceEvent`s. Detectors are per session type (`detectors/race.js` in v1; qualifying and practice in v1.1).
@@ -120,13 +121,13 @@ progress: { sector, segment, segmentsPerLap, at }  // last completed mini-sector
 
 ## Interfaces
 
-**Provider** (live and archive implement the same shape):
+**Provider** (live and replay implement the same shape):
 ```
 start(onMessage(FeedMessage)) → Promise<void>
 stop()
 status → { state: 'idle'|'connecting'|'live'|'stale'|'finished'|'error', message }
 ```
-Archive adds `list(season)`, `download(path)`, `setSpeed(n)`.
+Replay adds `list()`, `select(recordingId)`, `setSpeed(n)`. A topic of `"*"` carries a full state and makes the engine re-baseline.
 
 **Tables providers**: `jolpica.calendar(season)`, `jolpica.standings(season)`, `jolpica.results(season, round)`; `multiviewer.circuit(key, year)`. All go through `providers/cache.js` (file cache with TTL in `data/cache/`).
 
@@ -156,7 +157,9 @@ server/
     delayLine.js      from MatchRoom
   providers/          I/O only
     f1Live.js         SignalR Core client
-    archive.js        static archive list, download, replay
+    recordings.js     recording format: write, list, read
+    replay.js         replays a recording as FeedMessages
+    archive.js        F1 archive paths (import needs F1 TV, v1.1)
     jolpica.js        calendar, standings, results
     multiviewer.js    circuits
     cache.js          file cache with TTL
@@ -168,16 +171,19 @@ test/
   fixtures/           hand-written synthetic feed snippets (no F1 data committed)
   domain/*.test.js
   server/*.test.js
-data/                 git-ignored: show.json, tokens.json, secrets.json, cache/, replays/
+data/                 git-ignored: show.json, tokens.json, secrets.json, cache/, recordings/
 docs/
 ```
 
 ## Key flows
 
-**Rehearsal.** Control room → `follow {source:'replay', path}` → `archive.download(path)` if not in `data/replays/` → replay emits messages on the replay clock at the chosen speed → normal pipeline. The radar is in `replay` mode with real positions.
+**Recording.** `f1Live` writes every connection to `data/recordings/<started>_<sessionKey>.jsonl` (`providers/recordings.js`): first line `{"kind":"state","at","data"}` (the Subscribe reply), then `{"kind":"msg","at","topic","data","utc"}` per feed message, and a new state line after each reconnect.
 
-- *Session list:* the archive year index may answer 401, so `archive.list(season)` merges (a) the year index when it works, (b) paths derived from the Jolpica calendar, checked with a request for `SessionInfo.json`, and (c) `data/sessions.json`, where every live session's `SessionInfo.Path` is recorded. A pasted path is accepted after validation.
-- *Paths:* must match `^\d{4}/\d{4}-\d{2}-\d{2}_[^/]+/\d{4}-\d{2}-\d{2}_[^/]+/$`, are URL-encoded per segment (names contain `ã`, `ü`), and are stored on disk under a hash of the path, never the path itself.
+**Rehearsal.** Control room → `GET /api/recordings` (session read from each file's first line) → `follow {source:'replay', recording}` → `replay.js` reads the file and emits the lines as FeedMessages with their original spacing ÷ speed (gaps capped at 10 s) → normal pipeline. A half-written last line is skipped. Recording ids must match `^[A-Za-z0-9_-]{1,80}\.jsonl$` and exist in the list before they are opened.
+
+**Rehearsal race.** `providers/rehearsal.js` simulates a fictional 20-lap race (deterministic seed, 0.25 s steps) and writes it as `data/recordings/rehearsal-harbour-gp-v<VERSION>.jsonl` on start if missing. It emits the feed's own payloads (timing points with in-step crossing times, sectors, laps, positions, pit stops, stints, track status, race control, clock, weather) plus `{"kind":"truth","at","cars":{number:{d,laps,inPit,retired,finished}}}` once a second. Replay skips any kind other than `state` and `msg`. Bump `VERSION` whenever the output changes, so existing installs get the new file.
+
+**F1 archive (F1 TV only).** Since about 15 October 2026 every archive file answers 401 without an F1 TV login. `archive.js` keeps path validation and URL building; importing a past session with the token and converting it into the recording format is v1.1. Paths must match `^\d{4}/\d{4}-\d{2}-\d{2}_[^/]+/\d{4}-\d{2}-\d{2}_[^/]+/$` and are URL-encoded per segment.
 
 **Live.** `feed.js` checks the calendar every minute; within 15 minutes of a session it starts `f1Live` ("Connect now" starts it at any time). It stays connected until `SessionStatus` is `Finalised` or `Ends`, or 5 hours after the scheduled start. On connect, the `Subscribe` reply carries the full current state, which becomes the baseline; every reconnect re-baselines. Radar mode is `live` if a valid F1 TV token is set and `Position` messages arrive, otherwise `estimated`. If no `Position` message arrives for 10 s in live mode, the radar falls back to `estimated` and the control room says why.
 
@@ -199,6 +205,12 @@ All rules run on consecutive snapshots after the baseline.
 - Grid size is never hard-coded: 2026 has 22 cars.
 
 **Meeting ↔ round matching.** The feed identifies a meeting by `Meeting.Key` and circuit key; Jolpica by season + round. We match them by race date (±3 days) and country. MultiViewer uses the same circuit key as the feed.
+
+## Spike results (2026-11-08)
+
+- **Spike 1, live feed:** anonymous connection from Node works. The Subscribe reply contains every free topic. `Position.z`, `CarData.z` and `ChampionshipPrediction` are absent without F1 TV; `PitLaneTimeCollection` arrives but was empty. During a race, `TimingData` sends about 8 patches a second.
+- **Spike 2, archive:** every file, any season, answers 401 since about 15 October 2026. FastF1 and undercut-f1 added F1 TV login for it.
+- **Real payload notes** (from the São Paulo GP recording): 22 cars; 22 mini-sectors per lap there (7 + 8 + 7); segment status 2048 = completed, 0 = not yet; `TrackStatus` codes 1/2/4/5/6/7; `SessionStatus` goes `Started` → `Finished` at the flag; `ExtrapolatedClock` keeps `Extrapolating: true` after the flag; `RaceControlMessages` patches add index keys; race control `Utc` has no time zone (it is UTC).
 
 ## Estimated radar
 
@@ -224,7 +236,7 @@ From the snapshot: each car's last completed mini-sector (TimingData `Sectors[].
 
 - **Domain (most tests):** pure functions with synthetic fixtures — patch merging, `.z` decoding, normalize, each race detector (including pit-stop-is-not-an-overtake, lap 1 suppression, baseline on join), points, estimator ordering, delay line (carried over).
 - **Server:** sockets, tokens, actions (carried over), plus "token never leaves the server".
-- **End to end:** a short synthetic replay (a few laps, 4 cars, written by us in archive format) runs through the whole pipeline and asserts the event list.
+- **End to end:** a short synthetic recording (written by us in the recording format) runs through the whole pipeline and asserts the event list.
 - **Spikes** produce real recordings in `data/` for manual checks; real F1 data is never committed.
 
 ## Running
@@ -241,13 +253,16 @@ Docker and `docker-compose.yml` as in MatchRoom. Environment variables in `.env.
 | # | Decision | Alternatives considered | Why |
 |---|---|---|---|
 | D1 | New repo seeded from a copy of MatchRoom | GitHub fork; shared core package | Domain layer is almost all new; a shared package is premature with two consumers |
-| D2 | F1 live feed + F1 archive as primary data | OpenF1 | OpenF1 locks all access during live sessions without a paid key |
+| D2 | F1 live feed as primary data; F1 archive only with F1 TV (see D12) | OpenF1 | OpenF1 locks all access during live sessions without a paid key |
 | D3 | `@microsoft/signalr` | Hand-written client on `ws`; classic `/signalr` endpoint | Community clients moved to SignalR Core; official MIT library. Confirmed by spike 1 |
-| D4 | Replay of a real archived session as rehearsal | Scripted fictional race like MatchRoom | Real data exercises the real pipeline and radar; offline tests use a small synthetic replay instead |
+| D4 | ~~Replay of a real archived session as rehearsal~~ Superseded by D12 | Scripted fictional race like MatchRoom | Real data exercises the real pipeline and radar; offline tests use a small synthetic replay instead |
 | D5 | Estimated radar as default, F1 TV live as upgrade | Live-only radar; no radar without F1 TV | Free-first; honest label on air |
 | D6 | Snapshot throttled to 4 Hz | Normalize on every patch | The feed can send dozens of patches a second; overlays don't need more |
 | D7 | Jolpica for calendar and standings | Feed's ChampionshipPrediction | That topic is F1 TV-gated; Jolpica is free and enough with our own projection |
 | D8 | MultiViewer outlines, fallback to outline from archive positions | Hand-drawn SVGs | Real geometry, corners included, free |
 | D9 | No copied code from termf1, undercut-f1, f1-dash | Copy their clients | No licence / GPL / AGPL are incompatible with PolyForm NC |
-| D10 | Replay session list merged from archive index, calendar-derived paths and recorded live paths | Archive index only | The index answered 401 on 2026-11-08 |
+| D10 | ~~Replay session list merged from archive index, calendar-derived paths and recorded live paths | Archive index only | Superseded by D12: the whole archive needs F1 TV |
 | D11 | Even mini-sector spacing for the estimator first | Learn boundaries from archive positions up front | Cut from v1 unless spike 4 shows it is needed |
+| D12 | Free rehearsals replay GridPulse's own recordings of live sessions; F1 TV users can import archive sessions into the same format later | Archive replay for everyone; OpenF1 history | Spike 2 (2026-11-08): every archive file answers 401 without an F1 TV login since ~15 Oct 2026. OpenF1 locks during live sessions. Recording is free and uses the real pipeline |
+| D14 | A generated fictional race is the default rehearsal, stored as a recording with true positions | Recordings only; a scripted provider like MatchRoom's simulator | Works offline on first run without F1 TV; reuses the replay path; its truth lines test the tower now and the estimated radar later |
+| D13 | Anonymous SignalR Core connection to `/signalrcore` with `@microsoft/signalr` | Classic `/signalr` | Spike 1 (2026-11-08) connected anonymously and received every free topic |
