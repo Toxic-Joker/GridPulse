@@ -200,7 +200,11 @@ All rules run on consecutive snapshots after the baseline.
 - **New leader:** position 1 changes under the overtake rules, or via the pit cycle (announced as `new_leader`, not an overtake).
 - **Pit:** `pitStops` increases or `inPit` turns true then false.
 - **Restart:** status goes from `suspended` to `running` → `restart` event; a standing restart also emits `lights_out`.
-- **Rate limit:** one overtake banner per 5 s; the rest go to the ticker. Priority: followed drivers, then the top 3, then the rest.
+- **Rate limit (feed.js):** overtakes and pit stops share one banner per 5 s; the rest are marked `quiet` and shown in the ticker. Priority: followed drivers, then the top 3, then the rest.
+- **Pit shadow:** a car seen in the pits, pit-out, stopped or retired within the last 10 s is never part of an overtake.
+- **Penalty:** a new race control message matching `PENALTY` but not "NO FURTHER ACTION", "UNDER INVESTIGATION", "NOTED" or "REVIEWED".
+- **On air (app.js `presentEvent`):** `display` is fullscreen, banner, ticker or off from `show.auto`; quiet events and single yellows become `ticker`. The overlay puts flags, leader changes, retirements, penalties and the chequered flag ahead of queued minor banners, and drops banners older than 15 s.
+- **Verified** against the rehearsal race: every detected overtake matches the true positions, none under the safety car or after the flag (test/domain/race.test.js).
 - **Points:** race P1–P10 `25,18,15,12,10,8,6,4,2,1`; sprint P1–P8 `8,7,6,5,4,3,2,1`; no fastest-lap point. Projection base = Jolpica standings before this round + this weekend's sprint result if Jolpica's standings don't include it yet (checked by comparing the round and the sprint results endpoint).
 - Grid size is never hard-coded: 2026 has 22 cars.
 

@@ -9,9 +9,9 @@ const { SessionEngine } = require('./domain/engine');
 
 const TICK_MS = 250;
 const SNAPSHOT_MS = 250;
+const OVERTAKE_BANNER_MS = 5000;
 
 // TODO(radar): radar frames (4 Hz) from positions.js or estimator.js into the delay line as 'radar'.
-// TODO(race mode): overtake banner rate limit (one per 5 s, followed drivers and top 3 first).
 // TODO(standings): tables from Jolpica only while a widget on air needs them.
 // TODO(live): calendar check every minute; connect 15 min before a session, stay until Finalised or 5 h.
 
@@ -99,12 +99,30 @@ class Feed {
     const first = !this.live;
     this.live = snapshot;
     this.delay.push('frame', snapshot, at);
-    events.forEach((event) => {
+    this.paceOvertakes(events, at).forEach((event) => {
       this.delay.push('event', event, at);
-      this.log(describeEvent(event));
+      if (!event.quiet) this.log(describeEvent(event));
     });
     if (first) this.log(`Following ${snapshot.session.meetingName} ${snapshot.session.name}`.trim());
     this.onChange();
+  }
+
+  // Overtakes and pit stops come in bursts (a restart, a pit window), so between them they
+  // get at most one banner every few seconds; the rest go to the ticker only.
+  // Followed drivers and the top 3 win the banner.
+  paceOvertakes(events, at) {
+    const followed = new Set(this.getShow().followedDrivers || []);
+    const position = (e) => e.forPosition ?? e.position ?? 99;
+    const rank = (e) => (followed.has(e.code) || followed.has(e.on?.code) ? 0 : position(e) <= 3 ? 1 : 2);
+    const minor = events.filter((e) => e.type === 'overtake' || e.type === 'pit').sort((a, b) => rank(a) - rank(b) || position(a) - position(b));
+    minor.forEach((e) => {
+      if (at - (this.lastMinorBanner ?? -Infinity) >= OVERTAKE_BANNER_MS) {
+        this.lastMinorBanner = at;
+      } else {
+        e.quiet = true;
+      }
+    });
+    return events;
   }
 
   setDelay(seconds) {
@@ -146,6 +164,16 @@ function describeEvent(e) {
   switch (e.type) {
     case 'track_status': return `Track: ${e.status.toUpperCase()} (was ${e.from})`;
     case 'session_status': return `Session: ${e.status}`;
+    case 'lights_out': return 'Lights out';
+    case 'restart': return `Restart on lap ${e.lap}`;
+    case 'overtake': return `Overtake: ${e.code} on ${e.on.code} for P${e.forPosition}`;
+    case 'new_leader': return `New leader: ${e.code}`;
+    case 'pit': return `Pit stop: ${e.code} (stop ${e.stop})`;
+    case 'fastest_lap': return `Fastest lap: ${e.code} ${e.time}`;
+    case 'penalty': return `Penalty: ${e.text}`;
+    case 'retirement': return `Retired: ${e.code}`;
+    case 'lap1_summary': return `Lap 1: ${e.gains.map((g) => `${g.code} +${g.change}`).join(', ') || 'no gains'}`;
+    case 'chequered': return `Chequered flag: ${e.winner?.code ?? ''} wins`;
     default: return e.type;
   }
 }

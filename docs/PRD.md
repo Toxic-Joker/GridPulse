@@ -60,7 +60,9 @@ As a streamer, I want big moments announced on screen as they happen on TV.
 - A position change caused by a pit stop or a retirement is not announced as an overtake. Neither are changes under a safety car, VSC or red flag, changes that undo themselves within a second, or reordering after the flag (penalties).
 - On lap 1, single overtakes are not announced. After lap 1, a "lap 1" summary shows the biggest gains and losses.
 - A restart after a red flag gets its own "restart" moment.
-- At most one overtake banner every 5 seconds. Others go to the ticker, and overtakes involving followed drivers or the top 3 go first.
+- Overtakes and pit stops share one banner every 5 seconds; the rest go to the ticker, and followed drivers or the top 3 go first.
+- Flags, a new leader, retirements, penalties and the chequered flag jump the banner queue. A banner or ticker line that waited more than 15 seconds is dropped.
+- Single waved yellows go to the ticker, not a banner. Blue flags never show.
 - Joining a session already running announces nothing that already happened.
 - Each moment type can be set to full screen, banner or off in the control room.
 

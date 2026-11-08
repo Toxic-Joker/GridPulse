@@ -37,6 +37,8 @@ const DISPLAY = {
   track_status: ['fullscreen', 'banner', 'off'],
   penalty: ['banner', 'off'],
   retirement: ['banner', 'off'],
+  restart: ['fullscreen', 'banner', 'off'],
+  lap1_summary: ['banner', 'off'],
   chequered: ['fullscreen', 'banner', 'off'],
 };
 const REPLAY_SPEEDS = [1, 5, 20];
@@ -61,7 +63,7 @@ function defaultShow() {
     lang: 'en',
     background: '',
     cameraGuide: false,
-    auto: { lights_out: 'fullscreen', overtake: 'banner', new_leader: 'banner', pit: 'banner', fastest_lap: 'banner', track_status: 'banner', penalty: 'banner', retirement: 'banner', chequered: 'fullscreen' },
+    auto: { lights_out: 'fullscreen', overtake: 'banner', new_leader: 'banner', pit: 'banner', fastest_lap: 'banner', track_status: 'banner', penalty: 'banner', retirement: 'banner', restart: 'banner', lap1_summary: 'banner', chequered: 'fullscreen' },
     socials: [{ platform: 'x', handle: '@yourchannel' }],
     sponsor: { text: '', logo: '' },
     countdown: { title: '', target: null },

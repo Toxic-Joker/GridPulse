@@ -5,10 +5,14 @@ const { SessionEngine } = require('../../server/domain/engine');
 const { isArchivePath, archiveUrl } = require('../../server/providers/archive');
 
 const snap = (over = {}) => ({
+  at: 0,
   session: { key: 1, type: 'race' },
   status: 'running',
   track: { status: 'green', since: 0 },
+  laps: { current: 5, total: 50 },
   drivers: [],
+  fastestLap: null,
+  raceControl: [],
   ...over,
 });
 

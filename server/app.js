@@ -123,9 +123,13 @@ function createApp({ env = process.env, dataDir, providers: providersOverride } 
     changeTimer.unref?.();
   }
 
+  // How a moment appears on air: full screen, banner, ticker line only, or not at all.
   function presentEvent(event) {
-    const rule = show.auto[event.type];
-    return { ...event, display: rule ?? 'off' };
+    const rule = show.auto[event.type] ?? 'off';
+    if (rule === 'off') return { ...event, display: 'off' };
+    // Single waved yellows come and go all race: they belong in the ticker, not a banner.
+    const minorFlag = event.type === 'track_status' && (event.status === 'yellow' || (event.status === 'green' && event.from === 'yellow'));
+    return { ...event, display: event.quiet || minorFlag ? 'ticker' : rule };
   }
 
   const feed = new Feed({
