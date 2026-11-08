@@ -1,0 +1,18 @@
+services:
+  gridpulse:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      HOST: 0.0.0.0
+      DATA_DIR: /data
+    ports:
+      # Published to this computer only. Remove 127.0.0.1 to reach it from your network.
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - gridpulse-data:/data
+
+volumes:
+  gridpulse-data:
