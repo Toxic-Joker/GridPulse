@@ -448,3 +448,23 @@ p { margin: 0; }
 .result-name { text-transform: uppercase; display: flex; align-items: baseline; gap: 12px; overflow: hidden; white-space: nowrap; }
 .result-name small { font-size: 22px; color: var(--muted); font-weight: 500; text-transform: none; }
 .result-value { text-align: right; color: var(--muted); }
+
+/* ── Weather, preview, tyre strategy ────────────────────────── */
+.weather-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.weather-fact { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 12px 16px; background: var(--raised); }
+.weather-fact span { font: 500 24px 'Barlow Condensed', sans-serif; color: var(--muted); text-transform: uppercase; }
+.weather-fact b { white-space: nowrap; font: 700 52px/1 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
+.weather-rain { font-size: 24px; padding: 4px 12px; background: var(--raised); color: var(--muted); }
+.weather-rain.wet { background: #3b82f6; color: #fff; }
+.preview-kicker { margin: 0 0 10px; font: 600 24px 'Barlow Condensed', sans-serif; color: var(--muted); text-transform: uppercase; }
+.preview .tower-value { color: var(--chalk); text-align: left; text-transform: uppercase; }
+.stint-row { display: grid; grid-template-columns: 40px 64px 1fr; align-items: center; gap: 10px; height: 44px; padding: 0 8px; background: var(--raised); font: 600 30px/1 'Barlow Condensed', sans-serif; }
+.stint-row.out { opacity: .55; }
+.stint-bar { display: flex; gap: 2px; height: 24px; }
+.stint { display: flex; align-items: center; justify-content: center; height: 100%; min-width: 4px; font: 700 18px/1 'Barlow Condensed', sans-serif; font-style: normal; color: #111; }
+.stint-soft { background: #ff3b3b; color: #fff; }
+.stint-medium { background: #ffd12e; }
+.stint-hard { background: #f2f2f2; }
+.stint-intermediate { background: #3ccf4e; }
+.stint-wet { background: #3b82f6; color: #fff; }
+.stint-unknown { background: #888; }

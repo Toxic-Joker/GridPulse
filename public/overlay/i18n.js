@@ -10,6 +10,7 @@ const STRINGS = {
     for: 'for', on: 'on', safetyCar: 'Safety car', vsc: 'Virtual safety car', vscEnding: 'VSC ending', redFlag: 'Red flag', yellow: 'Yellow flag', trackClear: 'Track clear',
     gains: 'Gains', losses: 'Losses', laps: 'laps', waitingMap: 'Loading the circuit map',
     championship: 'Championship', drivers: 'Drivers', constructors: 'Constructors', projected: 'Projected championship', projectedNote: 'Shown during a race or sprint', afterRound: 'after round', loading: 'Loading', nextSession: 'Next session', noSession: 'No session scheduled', daysShort: 'd', result: 'Result', runningOrder: 'Running order',
+    follow: 'Follow', presentedBy: 'Presented by', weather: 'Weather', trackTemp: 'Track', airTemp: 'Air', humidity: 'Humidity', wind: 'Wind', rain: 'Rain', dry: 'Dry', grid: 'Grid', tyreStrategy: 'Tyre strategy',
   },
   fr: {
     race: 'Course', sprint: 'Sprint', qualifying: 'Qualifications', sprint_qualifying: 'Qualifications sprint', practice: 'Essais',
@@ -20,6 +21,7 @@ const STRINGS = {
     for: 'pour', on: 'sur', safetyCar: 'Voiture de sécurité', vsc: 'Voiture de sécurité virtuelle', vscEnding: 'Fin de VSC', redFlag: 'Drapeau rouge', yellow: 'Drapeau jaune', trackClear: 'Piste dégagée',
     gains: 'Gagnés', losses: 'Perdus', laps: 'tours', waitingMap: 'Chargement du circuit',
     championship: 'Championnat', drivers: 'Pilotes', constructors: 'Constructeurs', projected: 'Championnat en direct', projectedNote: 'Affiché pendant une course ou un sprint', afterRound: 'après la manche', loading: 'Chargement', nextSession: 'Prochaine séance', noSession: 'Aucune séance prévue', daysShort: 'j', result: 'Résultat', runningOrder: 'Classement provisoire',
+    follow: 'Suivez', presentedBy: 'Présenté par', weather: 'Météo', trackTemp: 'Piste', airTemp: 'Air', humidity: 'Humidité', wind: 'Vent', rain: 'Pluie', dry: 'Sec', grid: 'Grille', tyreStrategy: 'Stratégie pneus',
   },
   es: {
     race: 'Carrera', sprint: 'Sprint', qualifying: 'Clasificación', sprint_qualifying: 'Clasificación sprint', practice: 'Libres',
@@ -30,6 +32,7 @@ const STRINGS = {
     for: 'por', on: 'a', safetyCar: 'Coche de seguridad', vsc: 'Coche de seguridad virtual', vscEnding: 'Fin del VSC', redFlag: 'Bandera roja', yellow: 'Bandera amarilla', trackClear: 'Pista despejada',
     gains: 'Ganan', losses: 'Pierden', laps: 'vueltas', waitingMap: 'Cargando el circuito',
     championship: 'Campeonato', drivers: 'Pilotos', constructors: 'Constructores', projected: 'Campeonato en vivo', projectedNote: 'Se muestra durante una carrera o sprint', afterRound: 'tras la ronda', loading: 'Cargando', nextSession: 'Próxima sesión', noSession: 'No hay sesión prevista', daysShort: 'd', result: 'Resultado', runningOrder: 'Orden provisional',
+    follow: 'Sígueme', presentedBy: 'Presentado por', weather: 'Clima', trackTemp: 'Pista', airTemp: 'Aire', humidity: 'Humedad', wind: 'Viento', rain: 'Lluvia', dry: 'Seco', grid: 'Parrilla', tyreStrategy: 'Estrategia de neumáticos',
   },
   pt: {
     race: 'Corrida', sprint: 'Sprint', qualifying: 'Classificação', sprint_qualifying: 'Classificação sprint', practice: 'Treino livre',
@@ -40,6 +43,7 @@ const STRINGS = {
     for: 'pelo', on: 'sobre', safetyCar: 'Safety car', vsc: 'Safety car virtual', vscEnding: 'Fim do VSC', redFlag: 'Bandeira vermelha', yellow: 'Bandeira amarela', trackClear: 'Pista liberada',
     gains: 'Ganhos', losses: 'Perdas', laps: 'voltas', waitingMap: 'Carregando o circuito',
     championship: 'Campeonato', drivers: 'Pilotos', constructors: 'Construtores', projected: 'Campeonato ao vivo', projectedNote: 'Exibido durante uma corrida ou sprint', afterRound: 'após a etapa', loading: 'Carregando', nextSession: 'Próxima sessão', noSession: 'Nenhuma sessão prevista', daysShort: 'd', result: 'Resultado', runningOrder: 'Ordem provisória',
+    follow: 'Siga', presentedBy: 'Apresentado por', weather: 'Tempo', trackTemp: 'Pista', airTemp: 'Ar', humidity: 'Umidade', wind: 'Vento', rain: 'Chuva', dry: 'Seco', grid: 'Grid', tyreStrategy: 'Estratégia de pneus',
   },
 };
 

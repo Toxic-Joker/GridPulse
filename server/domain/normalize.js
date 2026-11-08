@@ -111,6 +111,7 @@ function driverRow(number, driver, timing, app, segmentAt) {
     stopped: Boolean(timing?.Stopped),
     knockedOut: Boolean(timing?.KnockedOut),
     tyre: tyre(app),
+    stints: values(app?.Stints).map((s) => ({ compound: COMPOUNDS.includes(s.Compound) ? s.Compound : 'UNKNOWN', laps: num(s.TotalLaps) ?? 0, isNew: s.New === true || s.New === 'true' })),
     progress: progress(timing, segmentAt),
   };
 }

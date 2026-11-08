@@ -30,6 +30,7 @@ test('drivers are sorted by position with tyres, grid and progress', () => {
   assert.deepStrictEqual(s.drivers.map((d) => d.code), ['ALP', 'BRV', 'CHL']);
   const brv = s.drivers[1];
   assert.deepStrictEqual(brv.tyre, { compound: 'SOFT', age: 14, isNew: false });
+  assert.deepStrictEqual(brv.stints, [{ compound: 'SOFT', laps: 14, isNew: false }]);
   assert.strictEqual(brv.gridPosition, 1);
   assert.strictEqual(brv.teamColour, '3671C6');
   assert.deepStrictEqual(brv.progress, { sector: 1, segment: 10, segmentsPerLap: 24, at: null });

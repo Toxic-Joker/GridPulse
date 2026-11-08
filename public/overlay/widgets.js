@@ -1,9 +1,9 @@
 // Panel widgets, keyed like WIDGETS in server/show.js. Each has data(state), whose
 // result decides whether to redraw, and render(data, { t }) returning DOM from h().
 // The session bar and ticker are drawn by overlay.js because they are always on air.
-// The radars are drawn by trackRadar.js. Still to come: preview, weather, tyres, socials, sponsor.
+// The radars are drawn by trackRadar.js.
 
-import { h, visibleOn } from './dom.js';
+import { h, visibleOn, icon, crest } from './dom.js';
 
 const TOWER_PAGE = 11;
 const COMPOUND = { SOFT: 'S', MEDIUM: 'M', HARD: 'H', INTERMEDIATE: 'I', WET: 'W', UNKNOWN: '?' };
@@ -192,6 +192,95 @@ function resultsRender(d, { t }) {
     h('div', { class: 'results-cols' }, h('ol', null, d.rows.slice(0, half).map(row)), h('ol', null, d.rows.slice(half).map(row))));
 }
 
+// ── Socials and sponsor (from MatchRoom) ──
+function socialsData(state) {
+  const list = state.show.socials || [];
+  return list.length ? { social: list[state.socialIndex % list.length] } : null;
+}
+
+function socialsRender(d, { t }) {
+  if (!d) return h('div');
+  return h('div', { class: 'panel socials' },
+    h('div', { class: 'panel-head' }, h('span', null, t('follow'))),
+    h('div', { class: 'social-line' }, icon(d.social.platform), h('b', null, d.social.handle)));
+}
+
+function sponsorData(state) {
+  const { text, logo } = state.show.sponsor || {};
+  return text || logo ? { text, logo } : null;
+}
+
+function sponsorRender(d, { t }) {
+  if (!d) return h('div');
+  return h('div', { class: 'panel sponsor' },
+    h('div', { class: 'panel-head' }, h('span', null, t('presentedBy'))),
+    h('div', { class: 'sponsor-line' }, d.logo ? crest(d.logo, 'sponsor-logo') : '', d.text ? h('b', null, d.text) : ''));
+}
+
+// ── Weather ──
+function weatherData(state) {
+  const w = state.frame?.weather;
+  return w ? { ...w } : null;
+}
+
+function weatherRender(d, { t }) {
+  if (!d) return h('div', { class: 'panel' }, h('div', { class: 'panel-head' }, h('span', null, t('weather'))), h('p', { class: 'empty-note' }, t('waiting')));
+  const fact = (label, value) => h('div', { class: 'weather-fact' }, h('span', null, label), h('b', null, value));
+  const deg = (v) => (v === null ? '–' : `${Math.round(v)}°C`);
+  return h('div', { class: 'panel weather' },
+    h('div', { class: 'panel-head' }, h('span', null, t('weather')), h('span', { class: `weather-rain${d.rainfall ? ' wet' : ''}` }, d.rainfall ? t('rain') : t('dry'))),
+    h('div', { class: 'weather-grid' },
+      fact(t('trackTemp'), deg(d.trackTemp)),
+      fact(t('airTemp'), deg(d.airTemp)),
+      fact(t('humidity'), d.humidity === null ? '–' : `${Math.round(d.humidity)}%`),
+      fact(t('wind'), d.windSpeed === null ? '–' : `${d.windSpeed.toFixed(1)} m/s`)));
+}
+
+// ── Session preview: the circuit, the distance and the front of the grid ──
+function previewData(state) {
+  const f = state.frame;
+  if (!f) return null;
+  const grid = f.drivers.filter((d) => d.gridPosition).sort((a, b) => a.gridPosition - b.gridPosition).slice(0, 8)
+    .map((d) => ({ position: d.gridPosition, code: d.code, name: d.name, colour: d.teamColour, tyre: d.stints[0] ?? d.tyre }));
+  return { meeting: f.session.meetingName, circuit: f.session.circuitName, session: f.session.type, laps: f.laps.total, grid };
+}
+
+function previewRender(d, { t }) {
+  if (!d) return h('div', { class: 'panel' }, h('div', { class: 'panel-head' }, h('span', null, t('waiting'))));
+  return h('div', { class: 'panel preview' },
+    h('div', { class: 'panel-head' }, h('span', null, d.circuit || d.meeting), d.laps ? h('span', { class: 'panel-sub' }, `${d.laps} ${t('laps')}`) : ''),
+    h('p', { class: 'preview-kicker' }, `${t(d.session)} · ${t('grid')}`),
+    h('ol', { class: 'tower-rows' }, d.grid.map((g) => h('li', { class: 'tower-row' },
+      h('b', { class: 'tower-pos' }, g.position), teamBar(g.colour), h('b', { class: 'tower-code' }, g.code), h('i'),
+      h('span', { class: 'tower-value' }, surname(g.name)), tyreChip({ compound: g.tyre.compound })))));
+}
+
+// ── Tyre strategy: every stint so far, as a bar per driver ──
+function tyresData(state) {
+  const f = state.frame;
+  if (!f) return null;
+  const pages = Math.max(1, Math.ceil(f.drivers.length / TOWER_PAGE));
+  const page = state.towerPage % pages;
+  const total = Math.max(f.laps.total || 0, ...f.drivers.map((d) => d.stints.reduce((a, s) => a + s.laps, 0)), 1);
+  return {
+    page, pages, total,
+    rows: f.drivers.slice(page * TOWER_PAGE, (page + 1) * TOWER_PAGE).map((d) => ({
+      position: d.position, code: d.code, colour: d.teamColour, out: d.retired,
+      stints: d.stints.map((s) => ({ compound: s.compound, laps: s.laps })),
+    })),
+  };
+}
+
+function tyresRender(d, { t }) {
+  if (!d) return h('div', { class: 'panel' }, h('div', { class: 'panel-head' }, h('span', null, t('tyreStrategy'))));
+  return h('div', { class: 'panel tyres' },
+    h('div', { class: 'panel-head' }, h('span', null, t('tyreStrategy')), d.pages > 1 ? h('span', { class: 'tower-page' }, `${d.page + 1}/${d.pages}`) : ''),
+    h('ol', { class: 'tower-rows' }, d.rows.map((r) => h('li', { class: `stint-row${r.out ? ' out' : ''}` },
+      h('b', { class: 'tower-pos' }, r.position ?? ''),
+      h('b', { class: 'tower-code' }, r.code),
+      h('div', { class: 'stint-bar' }, r.stints.map((s) => h('i', { class: `stint stint-${s.compound.toLowerCase()}`, style: { width: `${(s.laps / d.total) * 100}%` } }, s.laps >= 4 ? String(s.laps) : '')))))));
+}
+
 export const WIDGETS = {
   tower: { data: towerData, render: towerRender },
   championship: { data: championshipData, render: championshipRender },
@@ -199,5 +288,10 @@ export const WIDGETS = {
   championshipFull: { data: championshipFullData, render: championshipFullRender },
   waiting: { data: waitingData, render: waitingRender },
   results: { data: resultsData, render: resultsRender },
+  socials: { data: socialsData, render: socialsRender },
+  sponsor: { data: sponsorData, render: sponsorRender },
+  weather: { data: weatherData, render: weatherRender },
+  preview: { data: previewData, render: previewRender },
+  tyres: { data: tyresData, render: tyresRender },
 };
 

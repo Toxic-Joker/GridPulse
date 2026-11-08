@@ -42,7 +42,7 @@ function fit() {
 addEventListener('resize', fit);
 fit();
 
-const state = { show: null, frame: null, radar: null, tables: {}, towerPage: 0, nowMs: Date.now() };
+const state = { show: null, frame: null, radar: null, tables: {}, towerPage: 0, socialIndex: 0, nowMs: Date.now() };
 let t = translator('en');
 
 // ── Static structure ─────────────────────────────────────────────
@@ -375,6 +375,7 @@ setInterval(() => {
   bug.lap.textContent = countText(state.frame);
 }, 250);
 setInterval(() => { state.towerPage += 1; render(); }, TOWER_PAGE_SECONDS * 1000);
+setInterval(() => { state.socialIndex += 1; render(); }, 6000);
 // The countdown ticks every second while it is on air.
 setInterval(() => {
   state.nowMs = Date.now();
