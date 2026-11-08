@@ -121,7 +121,7 @@ As a streamer with F1 TV, I want exact live positions.
 
 1. ~~Does the free live feed still connect without an account?~~ **Yes** (spike 1, 2026-11-08): SignalR Core via `@microsoft/signalr`, anonymous. Positions, car telemetry and the championship prediction need F1 TV; everything else arrives.
 2. ~~Can past sessions be downloaded from the archive?~~ **Not for free** (spike 2): every archive file has answered 401 since about 15 October 2026 (FastF1 #978, undercut-f1 #252). It needs an F1 TV Access login.
-3. Is the estimated radar good enough to ship? Acceptance: order always matches the tower; on a past race, a car's estimated spot is within one mini-sector of its real spot at least 90% of the time. (Spike 4.)
+3. ~~Is the estimated radar good enough to ship?~~ **On the rehearsal race: yes.** Order always matches the tower; 100% of samples within one mini-sector (218 m), median error 9 m, 95th percentile 35 m. That race has evenly spaced mini-sectors and steady pace, so real tracks will do worse; one F1 TV recording with positions would measure that.
 4. What does the 2026 feed send for active aero and overtake mode, and is any of it worth showing? (Spike 5.)
 5. How long before a session can we connect, and does the feed send data during the formation lap and red-flag stoppages? (Answered by recording one live weekend.)
 6. ~~Can archive paths be derived from the calendar?~~ No longer needed: free rehearsals use recordings. `SessionInfo.Path` is in every recording for a later F1 TV import.

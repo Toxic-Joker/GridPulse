@@ -374,6 +374,40 @@ function generateRehearsal({ seed = 2026 } = {}) {
   return lines;
 }
 
+// Harbour Park, the rehearsal's fictional circuit, in MultiViewer's shape and units
+// (decimetres), starting at the start line. Corners sit where the outline bends most.
+function rehearsalCircuit() {
+  const N = 240;
+  const raw = Array.from({ length: N }, (_, i) => {
+    const a = (i / N) * Math.PI * 2;
+    const r = 1 + 0.22 * Math.sin(3 * a + 0.4) + 0.1 * Math.cos(5 * a) + 0.05 * Math.sin(7 * a + 1);
+    return [r * Math.cos(a) * 1.7, r * Math.sin(a)];
+  });
+  let perimeter = 0;
+  raw.forEach((p, i) => { const q = raw[(i + 1) % N]; perimeter += Math.hypot(q[0] - p[0], q[1] - p[1]); });
+  const scale = (TRACK_M * 10) / perimeter;
+  const pts = raw.map(([x, y]) => [Math.round(x * scale), Math.round(y * scale)]);
+  const along = [0];
+  for (let i = 1; i < N; i += 1) along.push(along[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const turn = pts.map((p, i) => {
+    const a = pts[(i - 3 + N) % N];
+    const b = pts[(i + 3) % N];
+    const h1 = Math.atan2(p[1] - a[1], p[0] - a[0]);
+    const h2 = Math.atan2(b[1] - p[1], b[0] - p[0]);
+    return Math.abs(Math.atan2(Math.sin(h2 - h1), Math.cos(h2 - h1)));
+  });
+  const picked = [];
+  turn.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => {
+    if (picked.length < 11 && i > 6 && picked.every((j) => Math.min(Math.abs(i - j), N - Math.abs(i - j)) > 12)) picked.push(i);
+  });
+  picked.sort((a, b) => a - b);
+  return {
+    circuitKey: 9001, circuitName: 'Harbour Park', year: 2026, rotation: 0,
+    x: pts.map((p) => p[0]), y: pts.map((p) => p[1]),
+    corners: picked.map((i, n) => ({ number: n + 1, length: along[i], trackPosition: { x: pts[i][0], y: pts[i][1] } })),
+  };
+}
+
 // Writes the rehearsal into the recordings folder once; a new VERSION writes a new file.
 function ensureRehearsal(recordingsDir) {
   const file = path.join(recordingsDir, REHEARSAL_ID);
@@ -385,4 +419,4 @@ function ensureRehearsal(recordingsDir) {
   return REHEARSAL_ID;
 }
 
-module.exports = { generateRehearsal, ensureRehearsal, REHEARSAL_ID, LAPS, TRACK_M, SEGMENTS };
+module.exports = { generateRehearsal, ensureRehearsal, rehearsalCircuit, REHEARSAL_ID, LAPS, TRACK_M, SEGMENTS };

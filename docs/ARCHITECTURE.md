@@ -216,6 +216,12 @@ All rules run on consecutive snapshots after the baseline.
 - **Spike 2, archive:** every file, any season, answers 401 since about 15 October 2026. FastF1 and undercut-f1 added F1 TV login for it.
 - **Real payload notes** (from the São Paulo GP recording): 22 cars; 22 mini-sectors per lap there (7 + 8 + 7); segment status 2048 = completed, 0 = not yet; `TrackStatus` codes 1/2/4/5/6/7; `SessionStatus` goes `Started` → `Finished` at the flag; `ExtrapolatedClock` keeps `Extrapolating: true` after the flag; `RaceControlMessages` patches add index keys; race control `Utc` has no time zone (it is UTC).
 
+## Track radar (built)
+
+- **Outline:** `providers/multiviewer.js` fetches `/circuits/{key}/{year}` (falling back to the two previous years), cached forever in `data/cache/`; the rehearsal circuit (key 9001) is built in. `domain/track.js` builds the Circuit and finds the start line from the corners' `length` (distance from the line), taking the median offset.
+- **Frames:** `feed.js` makes a RadarFrame with every snapshot (4 Hz) and puts it through the delay line. Real positions (`positions.js`) are used while a `Position` sample is under 10 s old; otherwise `estimator.js`, with session time running at the replay speed. The outline goes to the overlay straight away in `tables.circuit`.
+- **Overlay:** `trackRadar.js` rotates by MultiViewer's `rotation`, flips y for the screen, glides dots between frames, labels the top 5 (all 22 full screen) and followed drivers, colours the track by flag, lists cars in the pits, and shows "Estimated positions" for estimated frames.
+
 ## Estimated radar
 
 From the snapshot: each car's last completed mini-sector (TimingData `Sectors[].Segments[]`), when it completed it, and its recent lap time. Position along the lap = distance of that mini-sector's end + (time since) × (lap length ÷ recent lap time), capped at the next mini-sector's end, so a car never runs ahead of what timing has confirmed. Mini-sector boundaries start evenly spaced along the outline. Learning real boundaries from archive positions is only built if spike 4 shows even spacing misses the accuracy target. Order is then forced to match the tower: a car is never drawn ahead of a car above it on the same lap. Pit lane cars are drawn in a separate pit strip.

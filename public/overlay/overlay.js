@@ -6,6 +6,7 @@
 import { h, visibleOn, textOn, formatClock } from './dom.js';
 import { translator } from './i18n.js';
 import { WIDGETS, teamBar } from './widgets.js';
+import { TrackRadar } from './trackRadar.js';
 
 const params = new URLSearchParams(location.search);
 const FORMAT = params.get('format') === 'portrait' ? 'portrait' : 'landscape';
@@ -41,7 +42,7 @@ function fit() {
 addEventListener('resize', fit);
 fit();
 
-const state = { show: null, frame: null, tables: {}, towerPage: 0 };
+const state = { show: null, frame: null, radar: null, tables: {}, towerPage: 0 };
 let t = translator('en');
 
 // ── Static structure ─────────────────────────────────────────────
@@ -120,6 +121,12 @@ function drawBug() {
   bug.flag.style.color = flag?.colour ? textOn(flag.colour) : '';
 }
 
+// The radars keep their own drawing between frames, so they live outside the redraw-on-change widgets.
+const RADARS = {
+  radar: new TrackRadar({ aspect: FORMAT === 'portrait' ? 1.45 : 3.25, labelled: 5 }),
+  radarFull: new TrackRadar({ aspect: FORMAT === 'portrait' ? 0.62 : 1.9, labelled: 22 }),
+};
+
 const widgetEls = new Map();
 function ensureWidget(id, area) {
   if (widgetEls.has(id)) return widgetEls.get(id);
@@ -135,7 +142,7 @@ function winners() {
   const best = {};
   Object.entries(SLOT_OF).forEach(([id, slot]) => {
     const w = state.show.widgets[id];
-    if (!w?.on || !WIDGETS[id]) return;
+    if (!w?.on || !(WIDGETS[id] || RADARS[id])) return;
     const area = FORMAT === 'portrait' ? PORTRAIT_AREA[slot] : slot;
     if (!best[area] || w.at > best[area].at) best[area] = { id, at: w.at };
   });
@@ -158,7 +165,29 @@ function drawWidgets() {
     entry.sig = sig;
     entry.el.replaceChildren(def.render(data, { t, format: FORMAT }));
   });
-  front.classList.toggle('full-on', Boolean(current.full));
+  Object.entries(RADARS).forEach(([id, radar]) => {
+    const slot = SLOT_OF[id];
+    const area = FORMAT === 'portrait' ? PORTRAIT_AREA[slot] : slot;
+    const on = current[area]?.id === id;
+    if (!on && !widgetEls.has(id)) return;
+    const entry = ensureWidget(id, area);
+    entry.el.classList.toggle('on', on);
+    if (entry.sig === null) {
+      entry.sig = 'radar';
+      entry.el.replaceChildren(id === 'radarFull'
+        ? h('div', { class: 'sheet radar-sheet' }, radar.el)
+        : h('div', { class: 'panel radar-panel' }, radar.el));
+    }
+    radar.el.classList.toggle('is-3d', id === 'radar' && state.show.widgets.radar.opts?.mode === '3d');
+  });
+  front.classList.toggle('full-on', Boolean(current.full) && current.full.id !== 'radarFull');
+}
+
+function drawRadars() {
+  Object.values(RADARS).forEach((radar) => {
+    radar.setCircuit(state.tables.circuit);
+    if (state.radar) radar.setFrame(state.radar, { trackStatus: state.frame?.track.status, followed: state.show?.followedDrivers, t });
+  });
 }
 
 function render() {
@@ -319,13 +348,15 @@ socket.on('connect_error', (err) => {
   // Shown in the OBS preview only when the link is wrong, never for a brief network blip.
   if (err.message === 'unauthorized') stage.replaceChildren(h('p', { class: 'auth-error' }, 'This overlay link is out of date. Copy it again from the control room.'));
 });
-socket.on('hello', ({ show, frame, tables }) => {
+socket.on('hello', ({ show, frame, radar, tables }) => {
   state.show = show;
   state.frame = frame;
+  state.radar = radar;
   state.tables = tables || {};
   rcSeen = null;
   if (frame) syncClock(frame.clock);
   render();
+  drawRadars();
 });
 socket.on('show', (show) => { state.show = show; render(); });
 socket.on('frame', (frame) => {
@@ -333,7 +364,8 @@ socket.on('frame', (frame) => {
   syncClock(frame.clock);
   render();
 });
-socket.on('tables', (tables) => { state.tables = { ...state.tables, ...tables }; render(); });
+socket.on('tables', (tables) => { state.tables = { ...state.tables, ...tables }; render(); drawRadars(); });
+socket.on('radar', (radar) => { state.radar = radar; drawRadars(); });
 socket.on('event', onEvent);
 socket.on('alert', ({ text, sub, seconds }) => showBanner({ title: text, line: sub, colour: null, seconds }));
 

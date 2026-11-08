@@ -16,6 +16,7 @@ const { F1LiveProvider } = require('./providers/f1Live');
 const { ReplayProvider } = require('./providers/replay');
 const { isRecordingId } = require('./providers/recordings');
 const { ensureRehearsal } = require('./providers/rehearsal');
+const { MultiViewerProvider } = require('./providers/multiviewer');
 
 const LOG_SIZE = 60;
 
@@ -37,7 +38,7 @@ function loadTokens(dataDir, env) {
   return tokens;
 }
 
-function createApp({ env = process.env, dataDir, providers: providersOverride } = {}) {
+function createApp({ env = process.env, dataDir, providers: providersOverride, circuits: circuitsOverride } = {}) {
   fs.mkdirSync(dataDir, { recursive: true });
   const tokens = loadTokens(dataDir, env);
   const secrets = new Secrets(dataDir);
@@ -134,6 +135,7 @@ function createApp({ env = process.env, dataDir, providers: providersOverride } 
 
   const feed = new Feed({
     providers,
+    circuits: circuitsOverride || new MultiViewerProvider({ dataDir }),
     getShow: () => show,
     log: addLog,
     onChange: publishControl,

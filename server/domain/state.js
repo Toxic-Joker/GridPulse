@@ -60,6 +60,8 @@ class TimingState {
     this.topics = {};
     // When each car last completed a mini-sector (for the estimated radar), by racing number.
     this.segmentAt = {};
+    // When the last real position sample arrived (F1 TV), so stale positions are not shown.
+    this.positionAt = null;
   }
 
   /**
@@ -78,7 +80,10 @@ class TimingState {
     const payload = topic.endsWith('.z') ? decodeZ(data) : data;
     if (name === 'Position' || name === 'CarData') {
       const sample = latestSample(name, payload);
-      if (sample) this.topics[name] = sample;
+      if (sample) {
+        this.topics[name] = sample;
+        if (name === 'Position') this.positionAt = at;
+      }
       return;
     }
     if (name === 'TimingData' && isObject(payload?.Lines)) {

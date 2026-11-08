@@ -390,3 +390,27 @@ p { margin: 0; }
 .tyre-intermediate { color: #3ccf4e; }
 .tyre-wet { color: #3b82f6; }
 .tyre-unknown { color: #888; }
+
+/* ── Track radar ────────────────────────────────────────────── */
+.radar-panel { padding: 10px 14px; }
+.track-radar { position: relative; flex: 1; min-height: 0; width: 100%; height: 100%; }
+.track-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.track-radar.is-3d .track-svg { transform: perspective(1400px) rotateX(38deg) scale(.92); transform-origin: 50% 60%; }
+.radar-track-edge { fill: none; stroke: rgba(0, 0, 0, .55); stroke-width: 16; stroke-linejoin: round; }
+.radar-track { fill: none; stroke: var(--chalk); stroke-width: 7; stroke-linejoin: round; transition: stroke .4s; }
+.radar-start { stroke: var(--accent); stroke-width: 6; }
+.radar-corner { fill: var(--muted); font: 600 15px 'Barlow Condensed', sans-serif; text-anchor: middle; dominant-baseline: middle; opacity: .7; paint-order: stroke; stroke: var(--ink); stroke-width: 4px; }
+.radar-car { stroke: #0b0b0b; stroke-width: 3; }
+.radar-car-g.leader .radar-car { stroke: var(--accent); stroke-width: 4; }
+.radar-car-g.followed .radar-car { stroke: #fff; stroke-width: 4; }
+.radar-code { fill: var(--chalk); font: 700 19px 'Barlow Condensed', sans-serif; text-anchor: middle; paint-order: stroke; stroke: rgba(0, 0, 0, .85); stroke-width: 5px; }
+.radar-pits { position: absolute; right: 4px; top: 2px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font: 600 22px/1.05 'Barlow Condensed', sans-serif; }
+.radar-pits b { color: var(--accent); }
+.radar-note { position: absolute; left: 4px; bottom: 0; font: 500 22px 'Barlow Condensed', sans-serif; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.radar-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 26px; }
+.radar-empty:empty { display: none; }
+.sheet.radar-sheet { padding: 140px 120px 70px; }
+.sheet.radar-sheet .track-radar { position: relative; }
+.sheet.radar-sheet .radar-code { font-size: 15px; }
+.sheet.radar-sheet .radar-pits { font-size: 30px; }
+.sheet.radar-sheet .radar-note { font-size: 28px; }

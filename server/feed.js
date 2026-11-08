@@ -6,18 +6,23 @@ const { DelayLine } = require('./domain/delayLine');
 const { TimingState } = require('./domain/state');
 const { normalizeSession } = require('./domain/normalize');
 const { SessionEngine } = require('./domain/engine');
+const { buildCircuit, circuitForOverlay } = require('./domain/track');
+const { estimate } = require('./domain/estimator');
+const { toRadarFrame } = require('./domain/positions');
 
 const TICK_MS = 250;
 const SNAPSHOT_MS = 250;
 const OVERTAKE_BANNER_MS = 5000;
 
-// TODO(radar): radar frames (4 Hz) from positions.js or estimator.js into the delay line as 'radar'.
 // TODO(standings): tables from Jolpica only while a widget on air needs them.
 // TODO(live): calendar check every minute; connect 15 min before a session, stay until Finalised or 5 h.
 
 class Feed {
-  constructor({ providers, getShow, onAir, onChange, log, now = () => Date.now() }) {
+  constructor({ providers, circuits = null, getShow, onAir, onChange, log, now = () => Date.now() }) {
     this.providers = providers;
+    this.circuits = circuits;
+    this.circuit = null;
+    this.circuitKey = null;
     this.getShow = getShow;
     this.onAir = onAir;
     this.onChange = onChange;
@@ -34,7 +39,7 @@ class Feed {
     this.live = null;
     this.onAirFrame = null;
     this.onAirRadar = null;
-    this.tables = { standings: null, calendar: null };
+    this.tables = { standings: null, calendar: null, circuit: null };
     this.ticker = setInterval(() => this.tick(), TICK_MS);
     this.ticker.unref?.();
   }
@@ -64,6 +69,9 @@ class Feed {
     this.live = null;
     this.onAirFrame = null;
     this.onAirRadar = null;
+    this.circuit = null;
+    this.circuitKey = null;
+    this.tables = { ...this.tables, circuit: null };
     // A new session must not inherit what was waiting for the old one.
     this.delay = new DelayLine(this.getShow().delaySeconds * 1000);
     this.onAir({ kind: 'reset' });
@@ -104,7 +112,36 @@ class Feed {
       if (!event.quiet) this.log(describeEvent(event));
     });
     if (first) this.log(`Following ${snapshot.session.meetingName} ${snapshot.session.name}`.trim());
+    this.loadCircuit(snapshot.session);
+    const radar = this.radarFrame(snapshot, at);
+    if (radar) this.delay.push('radar', radar, at);
     this.onChange();
+  }
+
+  // Real positions when fresh ones arrive (F1 TV, or a recording that has them), otherwise estimated.
+  radarFrame(snapshot, at) {
+    const real = toRadarFrame(this.state.topics.Position, this.state.positionAt, snapshot, at, this.source === 'replay' ? 'replay' : 'live');
+    if (real) return real;
+    const rate = this.source === 'replay' ? this.provider?.speed || 1 : 1;
+    return estimate(snapshot, this.circuit, at, rate);
+  }
+
+  // The outline is static, so it goes on air straight away rather than through the delay line.
+  loadCircuit(session) {
+    const key = session.circuitKey;
+    if (!this.circuits || key === null || key === this.circuitKey) return;
+    this.circuitKey = key;
+    const generation = this.generation;
+    this.circuits.circuit(key, session.year || new Date(this.now()).getUTCFullYear())
+      .then((payload) => {
+        if (generation !== this.generation) return;
+        this.circuit = buildCircuit(payload);
+        this.tables = { ...this.tables, circuit: circuitForOverlay(this.circuit) };
+        this.onAir({ kind: 'tables', tables: { circuit: this.tables.circuit } });
+      })
+      .catch((err) => {
+        if (generation === this.generation) this.log(`No circuit map for this session: ${err.message}`);
+      });
   }
 
   // Overtakes and pit stops come in bursts (a restart, a pit window), so between them they
