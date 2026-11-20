@@ -104,14 +104,15 @@ function gapToFastest(timing, part) {
   return (part ? stats[part - 1]?.TimeDiffToFastest : null) ?? timing?.TimeDiffToFastest ?? '';
 }
 
-// Where a car is in its run: in the garage, on an out lap, or on track.
-function runState(timing) {
+// Where a car is in its run: in the garage, on an out lap, or on track. PitOut alone clears
+// at the end of the first sector, so TimingState remembers the out lap until the line.
+function runState(timing, outLap) {
   if (timing?.InPit) return 'garage';
-  if (timing?.PitOut) return 'out';
+  if (timing?.PitOut || outLap) return 'out';
   return 'track';
 }
 
-function driverRow(number, driver, timing, app, segmentAt, part) {
+function driverRow(number, driver, timing, app, segmentAt, part, outLap) {
   return {
     number,
     code: driver?.Tla ?? number,
@@ -134,19 +135,19 @@ function driverRow(number, driver, timing, app, segmentAt, part) {
     bestLaps: values(timing?.BestLapTimes).map((b) => b?.Value || ''),
     partBest: bestOfPart(timing, part),
     gapToFastest: gapToFastest(timing, part),
-    run: runState(timing),
+    run: runState(timing, outLap),
     tyre: tyre(app),
     stints: values(app?.Stints).map((s) => ({ compound: COMPOUNDS.includes(s.Compound) ? s.Compound : 'UNKNOWN', laps: num(s.TotalLaps) ?? 0, isNew: s.New === true || s.New === 'true' })),
     progress: progress(timing, segmentAt),
   };
 }
 
-function drivers(topics, segmentAt, part) {
+function drivers(topics, segmentAt, part, outLap = {}) {
   const list = topics.DriverList || {};
   const lines = topics.TimingData?.Lines || {};
   const app = topics.TimingAppData?.Lines || {};
   const numbers = new Set([...Object.keys(list), ...Object.keys(lines)].filter((k) => k !== '_kf'));
-  const rows = [...numbers].map((n) => driverRow(n, list[n], lines[n], app[n], segmentAt[n], part));
+  const rows = [...numbers].map((n) => driverRow(n, list[n], lines[n], app[n], segmentAt[n], part, Boolean(outLap[n])));
   // Cars without a position (before the session) keep the feed's driver list order.
   return rows.sort((a, b) => (a.position ?? 999) - (b.position ?? 999) || (num(list[a.number]?.Line) ?? 999) - (num(list[b.number]?.Line) ?? 999));
 }
@@ -183,6 +184,7 @@ function weather(w) {
  * @param {Record<string, any>} topics   TimingState.topics
  * @param {Record<string, number>} segmentAt TimingState.segmentAt
  * @param {number} at
+ * @param {{ clockAt?: number|null, rate?: number, outLap?: Record<string, boolean> }} [timing] TimingState extras
  * @returns {import('./types').SessionSnapshot}
  */
 function normalizeSession(topics, segmentAt, at, timing = {}) {
@@ -204,7 +206,7 @@ function normalizeSession(topics, segmentAt, at, timing = {}) {
     },
     laps: { current: num(topics.LapCount?.CurrentLap) ?? 0, total: num(topics.LapCount?.TotalLaps) },
     clock: clock(topics.ExtrapolatedClock, at, status === 'running', timing),
-    drivers: drivers(topics, segmentAt || {}, part),
+    drivers: drivers(topics, segmentAt || {}, part, timing.outLap),
     fastestLap: fastestLap(topics.TimingStats),
     raceControl: raceControl(topics.RaceControlMessages),
     weather: weather(topics.WeatherData),

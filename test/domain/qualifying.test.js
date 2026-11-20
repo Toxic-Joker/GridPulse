@@ -10,16 +10,19 @@ function play(kind) {
   const state = new TimingState();
   const engine = new SessionEngine();
   const events = [];
+  let outLapsPastSector1 = 0;
   let next = lines[0].at;
   lines.forEach((l) => {
     if (l.kind === 'truth') return;
     state.apply(l.kind === 'state' ? { topic: '*', data: l.data, at: l.at } : { topic: l.topic, data: l.data, at: l.at });
     while (l.at >= next) {
-      events.push(...engine.ingest(normalizeSession(state.topics, state.segmentAt, next), next).events);
+      const snapshot = normalizeSession(state.topics, state.segmentAt, next, { outLap: state.outLap });
+      outLapsPastSector1 += snapshot.drivers.filter((d) => d.run === 'out' && !d.pitOut).length;
+      events.push(...engine.ingest(snapshot, next).events);
       next += 250;
     }
   });
-  return { lines, events, final: normalizeSession(state.topics, state.segmentAt, lines.at(-1).at) };
+  return { lines, events, outLapsPastSector1, final: normalizeSession(state.topics, state.segmentAt, lines.at(-1).at) };
 }
 
 const quali = play('qualifying');
@@ -81,4 +84,9 @@ test('practice orders by best lap and reports new fastest times without knockout
   assert.ok(ofType(practice.events, 'session_fastest').every((e) => !e.pole));
   assert.strictEqual(ofType(practice.events, 'knockouts').length, 0);
   assert.strictEqual(ofType(practice.events, 'overtake').length, 0, 'no race moments in practice');
+});
+
+test('cars stay on their out lap after PitOut clears, as in the real feed', () => {
+  assert.ok(quali.outLapsPastSector1 > 0);
+  assert.ok(practice.outLapsPastSector1 > 0);
 });

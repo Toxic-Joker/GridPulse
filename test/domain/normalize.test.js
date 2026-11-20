@@ -81,3 +81,30 @@ test('unknown team colours and missing data do not break the snapshot', () => {
   const empty = normalizeSession({}, {}, AT);
   assert.deepStrictEqual([empty.drivers, empty.status, empty.track.status, empty.fastestLap], [[], 'pre', 'green', null]);
 });
+
+test('an out lap lasts from pit exit to the line, though PitOut clears after the first sector', () => {
+  const state = new TimingState();
+  state.apply({ topic: '*', data: raceState(), at: AT });
+  const run = () => normalizeSession(state.topics, state.segmentAt, AT, { outLap: state.outLap }).drivers.find((d) => d.number === '9').run;
+  const send = (line) => state.apply({ topic: 'TimingData', data: { Lines: { 9: line } }, at: AT });
+
+  send({ InPit: true });
+  assert.strictEqual(run(), 'garage');
+  send({ InPit: false, PitOut: true, Sectors: { 0: { Segments: { 0: { Status: 2064 } } } } });
+  assert.strictEqual(run(), 'out');
+  // The feed clears PitOut at the end of the first sector (Las Vegas FP1, 2026).
+  send({ PitOut: false, Sectors: { 0: { Segments: { 6: { Status: 2049 } } } } });
+  assert.strictEqual(run(), 'out', 'still on the out lap');
+  // A new lap's reset to Status 0 touches the last segment too; that is not the line.
+  send({ Sectors: { 2: { Segments: { 8: { Status: 0 } } } } });
+  assert.strictEqual(run(), 'out');
+  send({ Sectors: { 2: { Segments: { 8: { Status: 2049 } } } } });
+  assert.strictEqual(run(), 'track', 'crossing the line starts the first flying lap');
+
+  send({ InPit: false, PitOut: true });
+  send({ PitOut: false });
+  send({ InPit: true });
+  assert.strictEqual(run(), 'garage');
+  send({ InPit: false });
+  assert.strictEqual(run(), 'track', 'going back in ends the out lap');
+});

@@ -115,7 +115,7 @@ class Feed {
   }
 
   snapshot(at) {
-    const { snapshot, events } = this.engine.ingest(normalizeSession(this.state.topics, this.state.segmentAt, at, { clockAt: this.state.clockAt, rate: this.rate() }), at);
+    const { snapshot, events } = this.engine.ingest(normalizeSession(this.state.topics, this.state.segmentAt, at, { clockAt: this.state.clockAt, rate: this.rate(), outLap: this.state.outLap }), at);
     const first = !this.live;
     // The projection rides on the frame, so it goes on air with the order it was made from.
     if (this.base) snapshot.projected = projectChampionship(this.base, snapshot, this.weekend);

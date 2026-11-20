@@ -9,7 +9,7 @@ const path = require('path');
 const { shared, TRACK_M } = require('./rehearsal');
 
 const { DRIVERS, TEAMS, rng, fmtLap, iso, rcmUtc, emptySectors, SECTOR_SEGMENTS, SEGMENT_M, DT, T0 } = shared;
-const VERSION = 1;
+const VERSION = 2;
 const QUALIFYING_ID = `rehearsal-harbour-gp-quali-v${VERSION}.jsonl`;
 const PRACTICE_ID = `rehearsal-harbour-gp-fp1-v${VERSION}.jsonl`;
 const SEGMENTS = SECTOR_SEGMENTS.reduce((a, b) => a + b, 0);
@@ -173,8 +173,11 @@ function generateSession(kind = 'qualifying', { seed = 2027 } = {}) {
         let sector = 0;
         let index = inLap - 1;
         while (index >= SECTOR_SEGMENTS[sector]) { index -= SECTOR_SEGMENTS[sector]; sector += 1; }
-        const patch = { Sectors: { [sector]: { Segments: { [index]: { Status: c.mode === 'flying' ? 2049 : 2064 } } } } };
-        if (inLap === 1 && c.mode === 'out') patch.PitOut = false;
+        // As in the real feed (Las Vegas FP1, 2026): 2064 marks the pit lane, and PitOut clears
+        // at the end of the first sector, well before the out lap ends.
+        const pitLane = (c.mode === 'out' && inLap === 1) || (c.mode === 'in' && inLap === SEGMENTS);
+        const patch = { Sectors: { [sector]: { Segments: { [index]: { Status: pitLane ? 2064 : c.mode === 'flying' ? 2049 : 2048 } } } } };
+        if (inLap === SECTOR_SEGMENTS[0] && c.mode === 'out') patch.PitOut = false;
         if (index === SECTOR_SEGMENTS[sector] - 1) {
           patch.Sectors[sector].Value = (at - c.sectorStart).toFixed(3);
           c.sectorStart = at;

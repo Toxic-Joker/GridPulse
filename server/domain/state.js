@@ -51,6 +51,17 @@ function latestSample(topic, data) {
   return data;
 }
 
+// True when this patch reports the last mini-sector of the lap: the car has crossed the line.
+// The feed also clears every segment to Status 0 when a lap starts; that is not a crossing.
+function lapCompleted(line, merged) {
+  const sectors = merged?.Sectors;
+  if (!isObject(line?.Sectors) || !Array.isArray(sectors) || !sectors.length) return false;
+  const last = sectors.length - 1;
+  const segments = sectors[last]?.Segments;
+  const patch = line.Sectors[last]?.Segments;
+  return Array.isArray(segments) && isObject(patch) && Boolean(patch[segments.length - 1]?.Status);
+}
+
 function segmentsTouched(line) {
   return isObject(line?.Sectors) && Object.values(line.Sectors).some((s) => s && s.Segments !== undefined);
 }
@@ -64,6 +75,10 @@ class TimingState {
     this.positionAt = null;
     // When the session clock last arrived, so it can count down from there.
     this.clockAt = null;
+    // Cars on an out lap, by racing number. The feed's PitOut only lasts until the end of the
+    // first sector (seen at Las Vegas FP1, Nov 2026), so the out lap is kept here until the car
+    // crosses the line or goes back in.
+    this.outLap = {};
   }
 
   /**
@@ -76,6 +91,7 @@ class TimingState {
       this.topics = {};
       this.segmentAt = {};
       this.clockAt = null;
+      this.outLap = {};
       Object.entries(data || {}).forEach(([t, d]) => this.apply({ topic: t, data: d, at }));
       return;
     }
@@ -96,6 +112,16 @@ class TimingState {
     }
     if (name === 'ExtrapolatedClock') this.clockAt = at;
     this.topics[name] = mergePatch(this.topics[name], payload);
+    if (name === 'TimingData' && isObject(payload?.Lines)) this.trackOutLaps(payload.Lines);
+  }
+
+  trackOutLaps(lines) {
+    Object.entries(lines).forEach(([number, line]) => {
+      if (!isObject(line)) return;
+      const merged = this.topics.TimingData?.Lines?.[number];
+      if (line.InPit === true || lapCompleted(line, merged)) delete this.outLap[number];
+      if (line.PitOut === true) this.outLap[number] = true;
+    });
   }
 }
 
