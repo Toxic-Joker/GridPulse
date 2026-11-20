@@ -19,7 +19,7 @@ const { ensureRehearsal } = require('./providers/rehearsal');
 const { ensureSessionRehearsals } = require('./providers/rehearsalQualifying');
 const { MultiViewerProvider } = require('./providers/multiviewer');
 const { JolpicaProvider } = require('./providers/jolpica');
-const { dueSession, nextSession } = require('./domain/schedule');
+const { dueSession, nextSession, isSessionFor, scheduleAction } = require('./domain/schedule');
 
 const SCHEDULE_MS = 60000;
 
@@ -154,7 +154,10 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
     await feed.follow('live');
     await new Promise((resolve) => { const t = setTimeout(resolve, 1500); t.unref?.(); });
     if (feed.source === 'live' && feed.live?.status === 'ended') {
-      addLog(`${due.meeting} ${due.name} has already finished`);
+      // The feed can still be showing the session before (FP1 when FP2 is due): try again
+      // at the next check rather than give up on the due session.
+      if (isSessionFor(due, feed.live.session.startsAt)) addLog(`${due.meeting} ${due.name} has already finished`);
+      else autoStarted = null;
       await providers.live?.stop?.();
       if (before === 'replay' && show.replay.recording) followSource('replay');
       return;
@@ -176,10 +179,13 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
       }
       const due = dueSession(calendar, now);
       const key = due ? `${due.round}-${due.type}-${due.at}` : null;
-      if (show.autoLive && due && key !== autoStarted && feed.source !== 'live') {
+      const action = scheduleAction({ due, key, autoStarted, autoLive: show.autoLive, source: feed.source, liveStartsAt: feed.live?.session?.startsAt });
+      if (action === 'follow') {
         autoStarted = key;
         await autoFollow(due);
-      } else if (!due && autoStarted && feed.source === 'live') {
+      } else if (action === 'adopt') {
+        autoStarted = key;
+      } else if (action === 'close') {
         autoStarted = null;
         providers.live?.stop?.();
         addLog('The session window has passed: live feed closed');

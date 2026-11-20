@@ -3,6 +3,7 @@
 
 const BEFORE_MS = 15 * 60000;
 const AFTER_MS = 5 * 3600e3;
+const SAME_SESSION_MS = 30 * 60000;
 
 function sessionsOf(calendar) {
   return (calendar?.rounds || []).flatMap((r) => r.sessions.map((s) => ({ ...s, round: r.round, meeting: r.name, at: Date.parse(s.startsAt) })))
@@ -19,4 +20,26 @@ function nextSession(calendar, now) {
   return sessionsOf(calendar).find((s) => s.at > now) ?? null;
 }
 
-module.exports = { dueSession, nextSession, BEFORE_MS, AFTER_MS };
+// Whether the feed's session (its start time from SessionInfo) is the calendar's due session.
+// Back-to-back sessions (FP1 and FP2, FP3 and qualifying) sit inside each other's windows, and
+// the feed keeps the old session for a while after it ends.
+function isSessionFor(due, startsAt) {
+  const at = Date.parse(startsAt || '');
+  return Boolean(due) && Number.isFinite(at) && Math.abs(at - due.at) <= SAME_SESSION_MS;
+}
+
+/**
+ * What the calendar check should do now.
+ * 'follow': connect for the due session (also when live on the session before it, so the new
+ *   session gets its own recording and baseline). 'adopt': already live on the due session.
+ * 'close': the window has passed. null: nothing.
+ */
+function scheduleAction({ due, key, autoStarted, autoLive, source, liveStartsAt }) {
+  const liveOnIt = source === 'live' && isSessionFor(due, liveStartsAt);
+  if (due && liveOnIt) return key === autoStarted ? null : 'adopt';
+  if (due && autoLive && key !== autoStarted) return 'follow';
+  if (!due && autoStarted && source === 'live') return 'close';
+  return null;
+}
+
+module.exports = { dueSession, nextSession, isSessionFor, scheduleAction, BEFORE_MS, AFTER_MS };

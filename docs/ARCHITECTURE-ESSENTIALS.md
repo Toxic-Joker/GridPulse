@@ -47,6 +47,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 10. F1 TV token never leaves the server: not in sockets, show.json, or logs.
 11. Throttles run on the wall clock, not the replay clock.
 12. An out lap runs from pit exit to the line: the feed's `PitOut` clears after sector 1, so `TimingState.outLap` carries it (D15).
+13. Each session on the calendar gets its own live connection and recording, even back to back (D16).
 
 ## Don't
 - Don't copy code from termf1 (no licence), undercut-f1 (GPL), f1-dash (AGPL). Read only.
