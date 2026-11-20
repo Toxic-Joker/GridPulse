@@ -124,3 +124,24 @@ test('no overtakes are announced under the safety car or after the flag', () => 
   assert.strictEqual(ofType('lap1_summary')[0].gains.length > 0, true);
   assert.ok(LAPS > 0);
 });
+
+test('a red flag restart through Inactive is a restart, not a second lights out', () => {
+  const { raceState } = require('../fixtures/race');
+  const state = new TimingState();
+  const engine = new SessionEngine();
+  const t0 = Date.parse('2026-06-01T14:20:30.000Z');
+  state.apply({ topic: '*', data: raceState(), at: t0 });
+  const steps = [
+    { Status: 'Started', Started: 'Started' },
+    { Status: 'Aborted', Started: 'Started' },
+    { Status: 'Inactive', Started: 'Started' },
+    { Status: 'Started', Started: 'Started' },
+  ];
+  const events = steps.flatMap((data, i) => {
+    const at = t0 + i * 1000;
+    state.apply({ topic: 'SessionStatus', data, at });
+    return engine.ingest(normalizeSession(state.topics, state.segmentAt, at), at).events;
+  });
+  assert.strictEqual(events.filter((e) => e.type === 'lights_out').length, 0);
+  assert.strictEqual(events.filter((e) => e.type === 'restart').length, 1);
+});

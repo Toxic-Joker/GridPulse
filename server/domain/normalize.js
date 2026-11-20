@@ -56,12 +56,22 @@ function parseDuration(text) {
   return m ? ((Number(m[1]) * 60 + Number(m[2])) * 60 + Number(m[3])) * 1000 : null;
 }
 
-// The feed keeps "Extrapolating" on after the flag, so the clock only runs in a running session.
+// After a red flag the feed goes Aborted, then Inactive again before the restart, but keeps
+// Started at "Started" (seen at Las Vegas FP2, Nov 2026). That wait is still the red flag,
+// not the start of a new session.
+function sessionStatus(raw) {
+  if (raw?.Status === 'Inactive' && raw?.Started === 'Started') return 'suspended';
+  return STATUS[raw?.Status] ?? 'pre';
+}
+
+// The feed keeps "Extrapolating" on after the flag, so the clock only runs in a started session.
+// A practice clock keeps running through a red flag with no new clock message, so it runs
+// while suspended too, for as long as the feed says it is extrapolating.
 // It counts from when the clock message arrived, at the session's speed (a replay runs faster),
 // so a recording from another day still counts down properly.
-function clock(extrapolated, at, sessionRunning, { clockAt = null, rate = 1 } = {}) {
+function clock(extrapolated, at, sessionStarted, { clockAt = null, rate = 1 } = {}) {
   const remaining = parseDuration(extrapolated?.Remaining);
-  const running = sessionRunning && Boolean(extrapolated?.Extrapolating);
+  const running = sessionStarted && Boolean(extrapolated?.Extrapolating);
   if (remaining === null) return { remainingMs: null, running: false, rate };
   const from = clockAt ?? utcMs(extrapolated.Utc);
   const passed = running && from !== null ? Math.max(0, at - from) * rate : 0;
@@ -189,7 +199,7 @@ function weather(w) {
  */
 function normalizeSession(topics, segmentAt, at, timing = {}) {
   const trackCode = topics.TrackStatus?.Status;
-  const status = STATUS[topics.SessionStatus?.Status] ?? 'pre';
+  const status = sessionStatus(topics.SessionStatus);
   const info = session(topics.SessionInfo);
   const qualifying = ['qualifying', 'sprint_qualifying'].includes(info.type);
   const part = qualifying ? num(topics.TimingData?.SessionPart) : null;
@@ -205,7 +215,7 @@ function normalizeSession(topics, segmentAt, at, timing = {}) {
       since: trackSince(topics.SessionData, at),
     },
     laps: { current: num(topics.LapCount?.CurrentLap) ?? 0, total: num(topics.LapCount?.TotalLaps) },
-    clock: clock(topics.ExtrapolatedClock, at, status === 'running', timing),
+    clock: clock(topics.ExtrapolatedClock, at, ['running', 'suspended'].includes(status), timing),
     drivers: drivers(topics, segmentAt || {}, part, timing.outLap),
     fastestLap: fastestLap(topics.TimingStats),
     raceControl: raceControl(topics.RaceControlMessages),

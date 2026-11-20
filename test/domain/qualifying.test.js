@@ -90,3 +90,17 @@ test('cars stay on their out lap after PitOut clears, as in the real feed', () =
   assert.ok(quali.outLapsPastSector1 > 0);
   assert.ok(practice.outLapsPastSector1 > 0);
 });
+
+test('a lap finished after the flag can still top practice', () => {
+  const car = (number, position, best) => ({ number, code: `C${number}`, name: '', team: 'T', teamColour: '888888', position, partBest: best, knockedOut: false });
+  const snap = (at, status, cars) => ({ at, session: { key: 1, type: 'practice', part: null }, status, track: { status: 'green', since: 0 }, qualifying: null, drivers: cars, raceControl: [] });
+  const engine = new SessionEngine();
+  const events = [
+    snap(0, 'running', [car('16', 1, '1:47.605'), car('63', 2, '1:48.837')]),
+    snap(250, 'finished', [car('16', 1, '1:47.605'), car('63', 2, '1:48.837')]),
+    snap(500, 'finished', [car('63', 1, '1:47.272'), car('16', 2, '1:47.605')]),
+    snap(750, 'ended', [car('10', 1, '1:47.000'), car('63', 2, '1:47.272')]),
+  ].flatMap((s) => engine.ingest(s, s.at).events);
+  const fastest = ofType(events, 'session_fastest');
+  assert.deepStrictEqual(fastest.map((e) => [e.number, e.time]), [['63', '1:47.272']], 'after the flag, not once the session is closed');
+});

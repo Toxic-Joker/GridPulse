@@ -108,3 +108,15 @@ test('an out lap lasts from pit exit to the line, though PitOut clears after the
   send({ InPit: false });
   assert.strictEqual(run(), 'track', 'going back in ends the out lap');
 });
+
+test('after a red flag the feed goes Inactive again, which is still the red flag', () => {
+  const status = (data) => snapshotOf([{ topic: 'SessionStatus', data }]).status;
+  assert.strictEqual(status({ Status: 'Aborted', Started: 'Started' }), 'suspended');
+  assert.strictEqual(status({ Status: 'Inactive', Started: 'Started' }), 'suspended');
+  assert.strictEqual(status({ Status: 'Inactive', Started: 'Inactive' }), 'pre');
+});
+
+test('the clock keeps running through a red flag while the feed extrapolates', () => {
+  const s = snapshotOf([{ topic: 'SessionStatus', data: { Status: 'Inactive', Started: 'Started' } }]);
+  assert.deepStrictEqual([s.clock.running, s.clock.remainingMs], [true, 100 * 60000 - 30000]);
+});

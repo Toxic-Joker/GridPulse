@@ -46,9 +46,10 @@ function detect(prev, s, memory) {
     out.push({ type: 'quali_part', key: `part-${key}-${s.session.part}`, at, part: s.session.part, cut: q.cut });
   }
 
-  // Fastest time of the part or session.
+  // Fastest time of the part or session. A lap started before the flag still counts, and the
+  // last ones often top the session (Las Vegas FP2: both fastest laps came after the flag).
   const top = fastestOf(s);
-  if (top && top.partBest !== memory.fastest && s.status === 'running') {
+  if (top && top.partBest !== memory.fastest && ['running', 'finished'].includes(s.status)) {
     memory.fastest = top.partBest;
     out.push({ type: 'session_fastest', key: `fastest-${key}-${s.session.part ?? 0}-${top.number}-${top.partBest}`, at, ...name(top), time: top.partBest, part: s.session.part, pole: Boolean(finalPart) });
   }
