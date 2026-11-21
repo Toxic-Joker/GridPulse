@@ -65,6 +65,11 @@ class F1LiveProvider {
     }
   }
 
+  // Whether this connection is writing a recording (it skips a session that was already over).
+  get recording() {
+    return Boolean(this.recorder?.id);
+  }
+
   async stop() {
     const connection = this.connection;
     this.connection = null;

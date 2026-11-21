@@ -154,9 +154,10 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
     await feed.follow('live');
     await new Promise((resolve) => { const t = setTimeout(resolve, 1500); t.unref?.(); });
     if (feed.source === 'live' && feed.live?.status === 'ended') {
-      // The feed can still be showing the session before (FP1 when FP2 is due): try again
-      // at the next check rather than give up on the due session.
-      if (isSessionFor(due, feed.live.session.startsAt)) addLog(`${due.meeting} ${due.name} has already finished`);
+      // The feed can still be showing the session before (FP1 when FP2 is due), or the new
+      // session with the old one's Finalised status (Las Vegas FP3): try again at the next
+      // check rather than give up on the due session before it has even started.
+      if (isSessionFor(due, feed.live.session.startsAt) && Date.now() >= due.at) addLog(`${due.meeting} ${due.name} has already finished`);
       else autoStarted = null;
       await providers.live?.stop?.();
       if (before === 'replay' && show.replay.recording) followSource('replay');
@@ -179,7 +180,7 @@ function createApp({ env = process.env, dataDir, providers: providersOverride, c
       }
       const due = dueSession(calendar, now);
       const key = due ? `${due.round}-${due.type}-${due.at}` : null;
-      const action = scheduleAction({ due, key, autoStarted, autoLive: show.autoLive, source: feed.source, liveStartsAt: feed.live?.session?.startsAt });
+      const action = scheduleAction({ due, key, autoStarted, autoLive: show.autoLive, source: feed.source, liveStartsAt: feed.live?.session?.startsAt, recording: Boolean(providers.live?.recording) });
       if (action === 'follow') {
         autoStarted = key;
         await autoFollow(due);

@@ -55,6 +55,14 @@ test('live on the due session already (followed by hand): keep the connection', 
   assert.strictEqual(scheduleAction({ due: fp2, key: keyOf(fp2), autoStarted: null, autoLive: false, source: 'live', liveStartsAt: FP2_START }), 'adopt');
 });
 
+test('live on the due session but not recording it (it looked finished when joined): reconnect', () => {
+  const fp2 = dueSession(weekend, at('2026-11-20T03:46:00Z'));
+  const live = { due: fp2, key: keyOf(fp2), autoLive: true, source: 'live', liveStartsAt: FP2_START, recording: false };
+  assert.strictEqual(scheduleAction({ ...live, autoStarted: null }), 'follow');
+  assert.strictEqual(scheduleAction({ ...live, autoStarted: keyOf(fp2) }), null, 'once per session, not every minute');
+  assert.strictEqual(scheduleAction({ ...live, autoStarted: null, autoLive: false }), 'adopt');
+});
+
 test('replaying when a session is due follows it; automatic following off does not; the window closing lets go', () => {
   const fp2 = dueSession(weekend, at('2026-11-20T03:46:00Z'));
   assert.strictEqual(scheduleAction({ due: fp2, key: keyOf(fp2), autoStarted: null, autoLive: true, source: 'replay' }), 'follow');

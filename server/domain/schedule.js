@@ -31,12 +31,17 @@ function isSessionFor(due, startsAt) {
 /**
  * What the calendar check should do now.
  * 'follow': connect for the due session (also when live on the session before it, so the new
- *   session gets its own recording and baseline). 'adopt': already live on the due session.
+ *   session gets its own recording and baseline, or live on it without recording it: the feed
+ *   can show the new session while still saying the old one is Finalised, and the recorder
+ *   skips a finished session). 'adopt': already live on the due session and recording it.
  * 'close': the window has passed. null: nothing.
  */
-function scheduleAction({ due, key, autoStarted, autoLive, source, liveStartsAt }) {
+function scheduleAction({ due, key, autoStarted, autoLive, source, liveStartsAt, recording = true }) {
   const liveOnIt = source === 'live' && isSessionFor(due, liveStartsAt);
-  if (due && liveOnIt) return key === autoStarted ? null : 'adopt';
+  if (due && liveOnIt) {
+    if (key === autoStarted) return null;
+    return recording || !autoLive ? 'adopt' : 'follow';
+  }
   if (due && autoLive && key !== autoStarted) return 'follow';
   if (!due && autoStarted && source === 'live') return 'close';
   return null;

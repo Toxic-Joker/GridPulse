@@ -51,6 +51,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 14. `Inactive` with `Started` "Started" is a red flag (`suspended`), not pre-session; the clock keeps running while suspended (D17).
 15. A lap finished after the flag still counts for fastest time and pole (D18).
 16. A knocked-out car shows the time it went out with (D19).
+17. Being connected to the due session is not enough: it must also be recording, or the calendar check reconnects (D20).
 
 ## Don't
 - Don't copy code from termf1 (no licence), undercut-f1 (GPL), f1-dash (AGPL). Read only.
