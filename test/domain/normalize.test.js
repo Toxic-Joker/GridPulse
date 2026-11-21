@@ -120,3 +120,16 @@ test('the clock keeps running through a red flag while the feed extrapolates', (
   const s = snapshotOf([{ topic: 'SessionStatus', data: { Status: 'Inactive', Started: 'Started' } }]);
   assert.deepStrictEqual([s.clock.running, s.clock.remainingMs], [true, 100 * 60000 - 30000]);
 });
+
+test('in qualifying a knocked-out car keeps the time it went out with', () => {
+  const s = snapshotOf([
+    { topic: 'SessionInfo', data: { Type: 'Qualifying', Name: 'Qualifying' } },
+    { topic: 'TimingData', data: { SessionPart: 3, NoEntries: [20, 15, 10], Lines: {
+      7: { BestLapTimes: [{ Value: '1:16.060' }, { Value: '1:15.691' }, { Value: '1:15.674' }] },
+      8: { KnockedOut: true, BestLapTimes: [{ Value: '1:16.015' }, { Value: '1:16.381' }, { Value: '' }] },
+      9: { KnockedOut: true, BestLapTimes: [{ Value: '1:16.917' }, { Value: '' }, { Value: '' }] },
+    } } },
+  ]);
+  const best = Object.fromEntries(s.drivers.map((d) => [d.number, d.partBest]));
+  assert.deepStrictEqual(best, { 7: '1:15.674', 8: '1:16.381', 9: '1:16.917' });
+});

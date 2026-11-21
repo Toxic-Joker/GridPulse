@@ -104,9 +104,12 @@ function progress(timingLine, segmentAt) {
 
 // Qualifying keeps a best lap and a gap to the fastest for each part (Q1, Q2, Q3);
 // practice puts the gap on the line itself.
+// A knocked-out car keeps the time it went out with: its parts after that stay empty in the feed.
 function bestOfPart(timing, part) {
   const list = values(timing?.BestLapTimes);
-  return part ? (list[part - 1]?.Value || '') : (timing?.BestLapTime?.Value || '');
+  if (!part) return timing?.BestLapTime?.Value || '';
+  if (timing?.KnockedOut) return list.slice(0, part).map((b) => b?.Value || '').filter(Boolean).at(-1) || '';
+  return list[part - 1]?.Value || '';
 }
 
 function gapToFastest(timing, part) {

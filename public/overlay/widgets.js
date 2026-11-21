@@ -177,7 +177,8 @@ function resultsData(state) {
     rows: f.drivers.map((d, i) => ({
       position: d.position, name: d.name, code: d.code, team: d.team, colour: d.teamColour,
       laps: race && i === 0 ? d.laps : null,
-      value: d.retired ? null : race ? (i === 0 ? null : d.gapToLeader) : d.bestLap,
+      // Qualifying is classified on each car's time in the part it reached, not its best of the day.
+      value: d.retired ? null : race ? (i === 0 ? null : d.gapToLeader) : (d.partBest || d.bestLap),
       fastest: f.fastestLap?.number === d.number, out: d.retired,
     })),
   };
