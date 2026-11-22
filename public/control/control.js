@@ -18,6 +18,14 @@ function readToken() {
 addEventListener('hashchange', () => { if (location.hash.includes('token=')) location.reload(); });
 
 const root = document.getElementById('app');
+
+// How each moment appears on air. The choices for each come from the server (DISPLAY in show.js).
+const MOMENTS = {
+  Race: { lights_out: 'Lights out', overtake: 'Overtake', battle: 'Battle (swaps back and forth)', new_leader: 'New leader', pit: 'Pit stop', fastest_lap: 'Fastest lap', penalty: 'Penalty', retirement: 'Retirement', restart: 'Restart', lap1_summary: 'Lap 1 summary', chequered: 'Chequered flag' },
+  Flags: { track_status: 'Safety car, VSC, red flag' },
+  Qualifying: { quali_part: 'Start of Q1, Q2, Q3', session_fastest: 'Fastest time', knockouts: 'Knocked out', escape: 'Out of the drop zone', lap_deleted: 'Lap deleted' },
+};
+const DISPLAY_LABEL = { fullscreen: 'Full screen', banner: 'Banner', ticker: 'Ticker', off: 'Off' };
 const token = readToken();
 let catalog = null;
 let state = null;
@@ -80,6 +88,16 @@ if (!token) {
         h('p', null, `${state.show.delaySeconds} s`),
         [-5, -1, 1, 5].map((by) => h('button', { 'data-delay': by }, `${by > 0 ? '+' : ''}${by} s`))),
       h('section', null,
+        h('h2', null, 'Moments on air'),
+        Object.entries(MOMENTS).map(([group, kinds]) => h('div', null,
+          h('h3', null, group),
+          Object.entries(kinds).filter(([kind]) => catalog.display[kind]).map(([kind, label]) => h('div', { class: 'moment-row' },
+            h('span', null, label),
+            h('div', { role: 'group', 'aria-label': label }, catalog.display[kind].map((value) => {
+              const on = (state.show.auto[kind] ?? 'off') === value;
+              return h('button', { 'data-moment': kind, 'data-display': value, class: on ? 'on' : '', 'aria-pressed': String(on) }, DISPLAY_LABEL[value] ?? value);
+            }))))))),
+      h('section', null,
         h('h2', null, 'F1 TV (optional)'),
         h('p', null, state.f1tv.present ? (state.f1tv.expired ? 'Token expired: the radar uses estimated positions.' : 'Token saved: exact live positions.') : 'No token: the radar uses estimated positions.'),
         tokenInput,
@@ -100,6 +118,7 @@ if (!token) {
     const buttons = root.querySelectorAll('section:nth-of-type(2) button');
     Object.values(groups).flat().forEach(([id], i) => buttons[i]?.addEventListener('click', () => send({ name: 'widget', id })));
     root.querySelectorAll('[data-delay]').forEach((b) => b.addEventListener('click', () => send({ name: 'delay', by: Number(b.dataset.delay) })));
+    root.querySelectorAll('[data-moment]').forEach((b) => b.addEventListener('click', () => send({ name: 'auto', kind: b.dataset.moment, value: b.dataset.display })));
     root.querySelector('[data-save-token]').addEventListener('click', () => { send({ name: 'f1tvToken', token: tokenInput.value }); tokenInput.value = ''; });
     root.querySelector('[data-clear-token]').addEventListener('click', () => send({ name: 'f1tvToken', token: '' }));
   }
