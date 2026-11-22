@@ -87,8 +87,10 @@ if (!token) {
         h('button', { 'data-clear-token': '' }, 'Remove')),
       h('section', null,
         h('h2', null, 'Add to OBS'),
-        h('p', null, 'Browser source, 1920×1080:'),
-        h('code', null, overlayUrl))));
+        h('p', null, 'Landscape for YouTube and Twitch. Browser source, 1920×1080:'),
+        h('code', null, overlayUrl),
+        h('p', null, 'Portrait for TikTok and Shorts. Browser source, 1080×1920. The same widget buttons drive both:'),
+        h('code', null, `${overlayUrl}&format=portrait`))));
 
     // Handlers are attached here rather than through attributes, to keep the CSP strict.
     root.querySelector('[data-auto]').addEventListener('change', (e) => send({ name: 'autoLive', on: e.target.checked }));

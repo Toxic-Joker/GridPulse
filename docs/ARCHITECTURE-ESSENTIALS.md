@@ -22,7 +22,7 @@ Radar: `positions.js` (real) or `estimator.js` (estimated) → `RadarFrame` 4 Hz
 server/domain/     pure logic, no I/O (state, normalize, engine, detectors/, points, estimator, positions, track, delayLine, types)
 server/providers/  I/O only (f1Live, recordings, replay, rehearsal, archive, jolpica, multiviewer, cache)
 server/            index, app (sockets/auth), feed (runs a session), show (widgets/actions), secrets
-public/overlay/    OBS page; public/control/ control room; public/shared/
+public/overlay/    OBS page (?format=portrait for 1080×1920, ?layer=back|front); public/control/ control room; public/shared/
 test/              domain/, server/, fixtures/ (synthetic only)
 data/              git-ignored runtime state, caches, replays, secrets
 ```
@@ -52,6 +52,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 15. A lap finished after the flag still counts for fastest time, pole and the race fastest lap (D18, D21).
 16. A knocked-out car shows the time it went out with (D19).
 17. Being connected to the due session is not enough: it must also be recording, or the calendar check reconnects (D20).
+18. Portrait is the same page and the same show (`?format=portrait`): landscape slots fold into `main` and `sub`, the most recently lit widget wins each (D22). A new widget needs a portrait look too.
 
 ## Don't
 - Don't copy code from termf1 (no licence), undercut-f1 (GPL), f1-dash (AGPL). Read only.

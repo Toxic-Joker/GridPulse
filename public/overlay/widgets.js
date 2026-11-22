@@ -17,11 +17,21 @@ export function teamBar(colour) {
 }
 
 // 22 cars don't fit at a readable size, so the tower shows 11 at a time and turns the page.
+// Portrait is wide enough for the whole field in two columns, which a phone viewer can
+// read without waiting for the page to turn.
+function paging(state, count) {
+  if (state.format === 'portrait') return { page: 0, pages: 1, size: count, half: Math.ceil(count / 2) };
+  const pages = Math.max(1, Math.ceil(count / TOWER_PAGE));
+  return { page: state.towerPage % pages, pages, size: TOWER_PAGE, half: null };
+}
+
+// Two columns in portrait: the list fills the first column top to bottom, then the second.
+const rowsList = (half, items) => h('ol', { class: `tower-rows${half ? ' two-col' : ''}`, style: half ? { 'grid-template-rows': `repeat(${half}, auto)` } : null }, items);
+
 function towerData(state) {
   const f = state.frame;
   if (!f) return null;
-  const pages = Math.max(1, Math.ceil(f.drivers.length / TOWER_PAGE));
-  const page = state.towerPage % pages;
+  const { page, pages, size, half } = paging(state, f.drivers.length);
   const mode = state.show.widgets.tower.opts?.show === 'gap' ? 'gap' : 'interval';
   const followed = new Set(state.show.followedDrivers || []);
   const race = ['race', 'sprint'].includes(f.session.type);
@@ -29,8 +39,8 @@ function towerData(state) {
   // Outside a race the tower is a timesheet: the leader's time, then gaps to it.
   const timesheet = (d) => (d.position === 1 || !d.gapToFastest ? (d.partBest || '') : d.gapToFastest);
   return {
-    mode, page, pages, race, part: f.session.part,
-    rows: f.drivers.slice(page * TOWER_PAGE, (page + 1) * TOWER_PAGE).map((d) => ({
+    mode, page, pages, half, race, part: f.session.part,
+    rows: f.drivers.slice(page * size, (page + 1) * size).map((d) => ({
       position: d.position,
       code: d.code,
       colour: d.teamColour,
@@ -52,7 +62,7 @@ function towerRender(d, { t }) {
     h('div', { class: 'panel-head' },
       h('span', null, d.race ? t(d.mode) : d.part ? `Q${d.part} · ${t('timesheet')}` : t('timesheet')),
       d.pages > 1 ? h('span', { class: 'tower-page' }, `${d.page + 1}/${d.pages}`) : ''),
-    h('ol', { class: 'tower-rows' }, d.rows.map((r) => h('li', { class: `tower-row${r.followed ? ' followed' : ''}${r.out ? ' out' : ''}${r.cutBelow ? ' cut-below' : ''}${r.run ? ` run-${r.run}` : ''}` },
+    rowsList(d.half, d.rows.map((r) => h('li', { class: `tower-row${r.followed ? ' followed' : ''}${r.out ? ' out' : ''}${r.cutBelow ? ' cut-below' : ''}${r.run ? ` run-${r.run}` : ''}` },
       h('b', { class: 'tower-pos' }, r.position ?? ''),
       teamBar(r.colour),
       h('b', { class: 'tower-code' }, r.code),
@@ -297,12 +307,11 @@ function previewRender(d, { t }) {
 function tyresData(state) {
   const f = state.frame;
   if (!f) return null;
-  const pages = Math.max(1, Math.ceil(f.drivers.length / TOWER_PAGE));
-  const page = state.towerPage % pages;
+  const { page, pages, size, half } = paging(state, f.drivers.length);
   const total = Math.max(f.laps.total || 0, ...f.drivers.map((d) => d.stints.reduce((a, s) => a + s.laps, 0)), 1);
   return {
-    page, pages, total,
-    rows: f.drivers.slice(page * TOWER_PAGE, (page + 1) * TOWER_PAGE).map((d) => ({
+    page, pages, half, total,
+    rows: f.drivers.slice(page * size, (page + 1) * size).map((d) => ({
       position: d.position, code: d.code, colour: d.teamColour, out: d.retired,
       stints: d.stints.map((s) => ({ compound: s.compound, laps: s.laps })),
     })),
@@ -313,7 +322,7 @@ function tyresRender(d, { t }) {
   if (!d) return h('div', { class: 'panel' }, h('div', { class: 'panel-head' }, h('span', null, t('tyreStrategy'))));
   return h('div', { class: 'panel tyres' },
     h('div', { class: 'panel-head' }, h('span', null, t('tyreStrategy')), d.pages > 1 ? h('span', { class: 'tower-page' }, `${d.page + 1}/${d.pages}`) : ''),
-    h('ol', { class: 'tower-rows' }, d.rows.map((r) => h('li', { class: `stint-row${r.out ? ' out' : ''}` },
+    rowsList(d.half, d.rows.map((r) => h('li', { class: `stint-row${r.out ? ' out' : ''}` },
       h('b', { class: 'tower-pos' }, r.position ?? ''),
       h('b', { class: 'tower-code' }, r.code),
       h('div', { class: 'stint-bar' }, r.stints.map((s) => h('i', { class: `stint stint-${s.compound.toLowerCase()}`, style: { width: `${(s.laps / d.total) * 100}%` } }, s.laps >= 4 ? String(s.laps) : '')))))));

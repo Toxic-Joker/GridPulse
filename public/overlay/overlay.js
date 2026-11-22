@@ -19,7 +19,11 @@ const SLOT_OF = {
   tower: 'rightTop', tyres: 'rightTop', socials: 'rightBottom', sponsor: 'rightBottom',
   radar: 'bottom', knockout: 'bottom', waiting: 'full', results: 'full', radarFull: 'full', championshipFull: 'full',
 };
-const PORTRAIT_AREA = { leftTop: 'main', rightTop: 'main', bottom: 'main', leftBottom: 'sub', rightBottom: 'sub', full: 'full' };
+// Portrait (?format=portrait, 1080×1920, for TikTok) has room for one large and one small
+// panel under the camera, so the landscape slots share them, as in MatchRoom. Unlike
+// MatchRoom, the strip under the camera goes to the small panel: the radar and drop zone
+// are already that wide, flat shape, and the tower keeps the large one during a race.
+const PORTRAIT_AREA = { leftTop: 'main', rightTop: 'main', bottom: 'sub', leftBottom: 'sub', rightBottom: 'sub', full: 'full' };
 const FLAG = {
   yellow: { key: 'yellow', colour: '#f5d300' },
   sc: { key: 'safetyCar', colour: '#ff8a00' },
@@ -42,7 +46,7 @@ function fit() {
 addEventListener('resize', fit);
 fit();
 
-const state = { show: null, frame: null, radar: null, tables: {}, towerPage: 0, socialIndex: 0, nowMs: Date.now() };
+const state = { format: FORMAT, show: null, frame: null, radar: null, tables: {}, towerPage: 0, socialIndex: 0, nowMs: Date.now() };
 let t = translator('en');
 
 // ── Static structure ─────────────────────────────────────────────
@@ -125,7 +129,7 @@ function drawBug() {
 
 // The radars keep their own drawing between frames, so they live outside the redraw-on-change widgets.
 const RADARS = {
-  radar: new TrackRadar({ aspect: FORMAT === 'portrait' ? 1.45 : 3.25, labelled: 5 }),
+  radar: new TrackRadar({ aspect: FORMAT === 'portrait' ? 2.7 : 3.25, labelled: 5 }),
   radarFull: new TrackRadar({ aspect: FORMAT === 'portrait' ? 0.62 : 1.9, labelled: 22 }),
 };
 

@@ -88,6 +88,7 @@ As a streamer, I want to show the championship and what's coming.
 - Private control room link; read-only overlay links safe to paste into OBS.
 - One widget per screen area; lighting one replaces its neighbour.
 - Themes, team colours, four languages (en, fr, es, pt), socials and sponsor widgets, camera guide, optional backdrop layer.
+- Landscape (1920×1080, YouTube and Twitch) and portrait (1080×1920, TikTok and Shorts) OBS links, both driven by the same control room. Portrait stacks the essentials for a phone: session bar, ticker, banners and full-screen moments over the camera, the whole field in a two-column tower under it, one small panel below (radar, drop zone or standings), and every full screen re-flowed to one column.
 
 **8. F1 TV token (optional)**
 As a streamer with F1 TV, I want exact live positions.
@@ -121,7 +122,7 @@ Original v1.1 list, for reference:
 ## Constraints
 
 - **Budget:** free. No paid service required for any v1 feature.
-- **Platform:** Node 20+, runs locally (`npm start` or Docker), overlays are OBS browser sources at 1920×1080.
+- **Platform:** Node 20+, runs locally (`npm start` or Docker), overlays are OBS browser sources at 1920×1080, or 1080×1920 in portrait.
 - **Legal:** PolyForm Noncommercial, like MatchRoom. Data comes from unofficial, undocumented F1 sources: noncommercial use only, no F1 trademarks. termf1 (no licence) and undercut-f1 (GPL-3) are reading references only, no copied code.
 - **Data source risk:** F1 can change or gate its feeds at any time (positions in 2025, the archive in October 2026). Replaying recordings must keep working even if live breaks.
 - **Timeline:** no fixed deadline.

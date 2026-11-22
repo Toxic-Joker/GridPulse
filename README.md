@@ -70,6 +70,8 @@ Copy the overlay link from **Add to OBS** at the bottom of the control room and 
 | Middle | Your camera | Centre of the screen, under the session bar |
 | Bottom | Overlay link with `&layer=back` added (backdrop, optional) | 1920×1080 |
 
+For TikTok or Shorts, use the **portrait** link from the same list (it ends in `&format=portrait`) in a 1080×1920 scene. The layers work the same way, with your camera at the top under the session bar. One control room drives both, so the same click lights the tower on both streams.
+
 You're live.
 
 ## Never spoil an overtake

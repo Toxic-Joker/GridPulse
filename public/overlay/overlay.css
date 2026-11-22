@@ -478,3 +478,31 @@ p { margin: 0; }
 .ko-car .team-bar { grid-row: span 2; height: 100%; }
 .ko-car small { grid-column: 2 / span 2; font-size: 22px; color: var(--muted); font-weight: 500; text-transform: uppercase; }
 .ko-car.run-track small, .ko-car.run-out small { color: var(--accent); }
+
+/* ── Portrait (?format=portrait, 1080×1920) ───────────────────
+   Same graphics stacked for a phone: session bar, ticker and banners over the camera,
+   the large panel (tower) and small panel (radar, drop zone, standings) under it,
+   full screens re-flowed to one column. Slot geometry is MatchRoom's portrait layout. */
+/* Centred with left: 50%, these would shrink to half the 1080 canvas and wrap. */
+.fmt-portrait .session-bug, .fmt-portrait .ticker, .fmt-portrait .banner { width: max-content; }
+.fmt-portrait .session-bug { top: 40px; max-width: 1040px; }
+.fmt-portrait .ticker { top: 128px; max-width: 1000px; }
+.fmt-portrait .banner { top: 186px; max-width: 1040px; }
+.fmt-portrait .banner-line { overflow: hidden; text-overflow: ellipsis; }
+
+.tower-rows.two-col { display: grid; grid-auto-flow: column; grid-template-columns: 1fr 1fr; column-gap: 12px; row-gap: 2px; }
+.fmt-portrait .two-col .tower-row, .fmt-portrait .two-col .stint-row { height: 50px; font-size: 33px; }
+
+.fmt-portrait .knockout .ko-cars { grid-template-columns: repeat(4, 1fr); }
+.fmt-portrait .sheet-kicker { font-size: 52px; padding: 0 40px; }
+.fmt-portrait .waiting-clock { font-size: 160px; }
+.fmt-portrait .waiting-session { font-size: 46px; }
+.fmt-portrait .moment-word { padding: 0 30px; }
+.fmt-portrait .moment-line { font-size: 72px; padding: 0 40px; }
+.fmt-portrait .moment-podium { font-size: 64px; }
+.fmt-portrait .results-cols { grid-template-columns: 1fr; gap: 4px; width: 1000px; }
+.fmt-portrait .result-row { height: 56px; grid-template-columns: 52px 10px 1fr 16px 170px; }
+.fmt-portrait .table-sheet { padding-top: 120px; }
+.fmt-portrait .standings-full { grid-template-columns: 1000px; gap: 36px; }
+.fmt-portrait .standings-full .standing-row { height: 40px; font-size: 30px; }
+.fmt-portrait .sheet.radar-sheet { padding: 300px 30px 300px; }
