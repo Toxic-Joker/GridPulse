@@ -70,6 +70,17 @@ test('a fastest lap set on the last lap, after the leader took the flag, is stil
   assert.deepStrictEqual(events.filter((e) => e.type === 'fastest_lap').map((e) => [e.code, e.time]), [['C2', '1:28.500']]);
 });
 
+test('when the feed moves from qualifying to the race, the race starts from its own baseline', () => {
+  const quali = { ...snap(0, ['1', '2']), session: { key: 1, type: 'qualifying', part: 3 }, qualifying: { part: 3, entries: [20, 15, 10], cut: null } };
+  const engine = new SessionEngine();
+  engine.ingest(quali, 0);
+  engine.ingest({ ...quali, at: 250 }, 250);
+  const pitting = snap(500, ['1', '2'], { session: { key: 2, type: 'race' }, status: 'pre', drivers: { 2: { inPit: true } } });
+  assert.deepStrictEqual(engine.ingest(pitting, 500).events, [], 'the first race snapshot is a baseline');
+  const events = engine.ingest(snap(750, ['1', '2'], { session: { key: 2, type: 'race' } }), 750).events;
+  assert.deepStrictEqual(types(events), ['session_status', 'lights_out']);
+});
+
 test('"no further action" is not a penalty', () => {
   const later = snap(250, ['1', '2']);
   later.raceControl = [{ at: 100, message: 'FIA STEWARDS: TIME PENALTY INVESTIGATION - NO FURTHER ACTION', number: null }];

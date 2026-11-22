@@ -25,6 +25,13 @@ class SessionEngine {
    */
   ingest(snapshot, at) {
     const detector = DETECTORS[snapshot.session.type];
+    // The live feed moves on to the next session on the same connection (qualifying to the race
+    // at Las Vegas, 2026-11-22). Each session starts from a new baseline with its own memory,
+    // or the race detector reads qualifying's memory and fails.
+    if (this.prev && (this.prev.session.key !== snapshot.session.key || this.prev.session.type !== snapshot.session.type)) {
+      this.prev = null;
+      this.memory = {};
+    }
     let events = [];
     if (this.prev) {
       events = commonEvents(this.prev, snapshot, at);

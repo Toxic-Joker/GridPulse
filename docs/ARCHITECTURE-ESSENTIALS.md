@@ -53,6 +53,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 16. A knocked-out car shows the time it went out with (D19).
 17. Being connected to the due session is not enough: it must also be recording, or the calendar check reconnects (D20).
 18. Portrait is the same page and the same show (`?format=portrait`): landscape slots fold into `main` and `sub`, the most recently lit widget wins each (D22). A new widget needs a portrait look too.
+19. A new session on the same connection starts from a new baseline with fresh detector memory (D23).
 
 ## Don't
 - Don't copy code from termf1 (no licence), undercut-f1 (GPL), f1-dash (AGPL). Read only.
