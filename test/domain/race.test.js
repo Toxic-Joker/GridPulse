@@ -91,6 +91,15 @@ test('a car the feed marks retired and then takes back is not announced as retir
   assert.deepStrictEqual(gone.filter((e) => e.type === 'retirement').map((e) => [e.code, e.at]), [['C2', 60250]]);
 });
 
+test('a car only marked stopped is out, and a car marked out after the flag is not a retirement', () => {
+  const stopped = snap(250, ['1', '2'], { drivers: { 2: { stopped: true, retired: true } } });
+  const events = run([snap(0, ['1', '2']), stopped, { ...stopped, at: 60250 }]);
+  assert.deepStrictEqual(types(events), ['retirement']);
+  const flag = { status: 'finished' };
+  const late = snap(250, ['1', '2'], { ...flag, drivers: { 2: { retired: true } } });
+  assert.deepStrictEqual(types(run([snap(0, ['1', '2'], flag), late, { ...late, at: 60250 }])), []);
+});
+
 test('"no further action" is not a penalty', () => {
   const later = snap(250, ['1', '2']);
   later.raceControl = [{ at: 100, message: 'FIA STEWARDS: TIME PENALTY INVESTIGATION - NO FURTHER ACTION', number: null }];

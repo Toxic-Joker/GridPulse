@@ -142,7 +142,9 @@ function driverRow(number, driver, timing, app, segmentAt, part, outLap) {
     pitStops: num(timing?.NumberOfPitStops) ?? 0,
     inPit: Boolean(timing?.InPit),
     pitOut: Boolean(timing?.PitOut),
-    retired: Boolean(timing?.Retired),
+    // The feed does not always mark a car that is out as retired: at Las Vegas 2026 PER and LIN
+    // only ever got Stopped. Stopped is only set on cars that are out, never on the whole field.
+    retired: Boolean(timing?.Retired || timing?.Stopped),
     stopped: Boolean(timing?.Stopped),
     knockedOut: Boolean(timing?.KnockedOut),
     bestLaps: values(timing?.BestLapTimes).map((b) => b?.Value || ''),

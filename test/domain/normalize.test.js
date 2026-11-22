@@ -133,3 +133,10 @@ test('in qualifying a knocked-out car keeps the time it went out with', () => {
   const best = Object.fromEntries(s.drivers.map((d) => [d.number, d.partBest]));
   assert.deepStrictEqual(best, { 7: '1:15.674', 8: '1:16.381', 9: '1:16.917' });
 });
+
+test('a car the feed only marks Stopped is out, like a retired car', () => {
+  const s = snapshotOf([{ topic: 'TimingData', data: { Lines: { 8: { Stopped: true } } } }]);
+  const brv = s.drivers.find((d) => d.code === 'BRV');
+  assert.deepStrictEqual([brv.retired, brv.stopped], [true, true]);
+  assert.ok(s.drivers.filter((d) => d.code !== 'BRV').every((d) => !d.retired));
+});

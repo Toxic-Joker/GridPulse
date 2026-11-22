@@ -63,6 +63,8 @@ function detect(prev, s, memory) {
   });
   s.drivers.forEach((d) => {
     if (!d.retired) { delete memory.retiredSince[d.number]; return; }
+    // A car marked out once the race is over finished it (ALO, lapped, Las Vegas 2026).
+    if (!memory.retiredSince[d.number] && !['running', 'suspended'].includes(s.status)) return;
     const since = memory.retiredSince[d.number] ??= { at, lap: s.laps.current };
     if (!memory.retiredDone[d.number] && at - since.at >= RETIRE_CONFIRM_MS) {
       memory.retiredDone[d.number] = true;

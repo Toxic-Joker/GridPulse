@@ -55,6 +55,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 18. Portrait is the same page and the same show (`?format=portrait`): landscape slots fold into `main` and `sub`, the most recently lit widget wins each (D22). A new widget needs a portrait look too.
 19. A new session on the same connection starts from a new baseline with fresh detector memory (D23).
 20. A retirement is only announced after `Retired` has held for 60 s; the feed can take one back (D24).
+21. `Stopped` means out, like `Retired`; a car marked out after the race is over finished it (D25).
 
 ## Don't
 - Don't copy code from termf1 (no licence), undercut-f1 (GPL), f1-dash (AGPL). Read only.
