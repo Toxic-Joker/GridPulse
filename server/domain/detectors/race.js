@@ -57,9 +57,10 @@ function detect(prev, s, memory) {
     if (d.retired && !was.retired) out.push({ type: 'retirement', key: `ret-${d.number}`, at, ...name(d), lap: s.laps.current });
   });
 
-  // Fastest lap of the race.
+  // Fastest lap of the race. Cars still finish their last lap after the leader takes the flag,
+  // and that lap can be the fastest (SAI at Silverstone 2024), so it counts until Finalised.
   const fl = s.fastestLap;
-  if (fl && s.status === 'running' && (!prev.fastestLap || prev.fastestLap.time !== fl.time || prev.fastestLap.number !== fl.number) && now[fl.number]) {
+  if (fl && ['running', 'finished'].includes(s.status) && (!prev.fastestLap || prev.fastestLap.time !== fl.time || prev.fastestLap.number !== fl.number) && now[fl.number]) {
     out.push({ type: 'fastest_lap', key: `fl-${fl.number}-${fl.time}`, at, ...name(now[fl.number]), time: fl.time, lap: fl.lap });
   }
 

@@ -63,6 +63,13 @@ test('pit stops, retirements, penalties and fastest laps are reported once', () 
   assert.strictEqual(events.find((e) => e.type === 'penalty').code, 'C2');
 });
 
+test('a fastest lap set on the last lap, after the leader took the flag, is still reported', () => {
+  const flag = snap(0, ['1', '2'], { status: 'finished', fastestLap: { number: '1', time: '1:29.000', lap: 51 } });
+  const last = snap(250, ['1', '2'], { status: 'finished', fastestLap: { number: '2', time: '1:28.500', lap: 52 } });
+  const events = run([snap(-250, ['1', '2'], { fastestLap: flag.fastestLap }), flag, last]);
+  assert.deepStrictEqual(events.filter((e) => e.type === 'fastest_lap').map((e) => [e.code, e.time]), [['C2', '1:28.500']]);
+});
+
 test('"no further action" is not a penalty', () => {
   const later = snap(250, ['1', '2']);
   later.raceControl = [{ at: 100, message: 'FIA STEWARDS: TIME PENALTY INVESTIGATION - NO FURTHER ACTION', number: null }];

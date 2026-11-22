@@ -49,7 +49,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 12. An out lap runs from pit exit to the line: the feed's `PitOut` clears after sector 1, so `TimingState.outLap` carries it (D15).
 13. Each session on the calendar gets its own live connection and recording, even back to back (D16).
 14. `Inactive` with `Started` "Started" is a red flag (`suspended`), not pre-session; the clock keeps running while suspended (D17).
-15. A lap finished after the flag still counts for fastest time and pole (D18).
+15. A lap finished after the flag still counts for fastest time, pole and the race fastest lap (D18, D21).
 16. A knocked-out car shows the time it went out with (D19).
 17. Being connected to the due session is not enough: it must also be recording, or the calendar check reconnects (D20).
 
