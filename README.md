@@ -145,7 +145,7 @@ Yes, once GridPulse has recorded one: every session it follows live is saved and
 <summary><b>Is this official? Could it stop working?</b></summary>
 <br>
 
-It's unofficial and not associated with Formula 1. The live timing feed is undocumented, and F1 has changed what it publishes before. If the feed changes, the rehearsals and recordings keep working while GridPulse is updated. Qualifying and practice were built from what the community knows of the feed and will be checked against a real session.
+It's unofficial and not associated with Formula 1. The live timing feed is undocumented, and F1 has changed what it publishes before. If the feed changes, the rehearsals and recordings keep working while GridPulse is updated. Practice, qualifying and the race were checked against the live feed at the 2026 Las Vegas Grand Prix.
 </details>
 
 <details>
