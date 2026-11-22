@@ -216,7 +216,8 @@ class Feed {
     const followed = new Set(this.getShow().followedDrivers || []);
     const position = (e) => e.forPosition ?? e.position ?? 99;
     const rank = (e) => (followed.has(e.code) || followed.has(e.on?.code) ? 0 : position(e) <= 3 ? 1 : 2);
-    const minor = events.filter((e) => e.type === 'overtake' || e.type === 'pit').sort((a, b) => rank(a) - rank(b) || position(a) - position(b));
+    // A battle for the lead stands in for a New leader banner, so it is not paced.
+    const minor = events.filter((e) => ['overtake', 'battle', 'pit'].includes(e.type) && !e.quiet && !(e.type === 'battle' && e.forPosition === 1)).sort((a, b) => rank(a) - rank(b) || position(a) - position(b));
     minor.forEach((e) => {
       if (at - (this.lastMinorBanner ?? -Infinity) >= OVERTAKE_BANNER_MS) {
         this.lastMinorBanner = at;
@@ -270,6 +271,7 @@ function describeEvent(e) {
     case 'restart': return `Restart on lap ${e.lap}`;
     case 'overtake': return `Overtake: ${e.code} on ${e.on.code} for P${e.forPosition}`;
     case 'new_leader': return `New leader: ${e.code}`;
+    case 'battle': return `Battle for P${e.forPosition}: ${e.code} and ${e.on.code}`;
     case 'pit': return `Pit stop: ${e.code} (stop ${e.stop})`;
     case 'fastest_lap': return `Fastest lap: ${e.code} ${e.time}`;
     case 'penalty': return `Penalty: ${e.text}`;

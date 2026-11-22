@@ -77,7 +77,7 @@
 
 /**
  * A moment worth showing. `key` is unique per real-world moment, so it is never announced twice.
- * Types: lights_out, overtake, new_leader, pit, fastest_lap, track_status, penalty,
+ * Types: lights_out, overtake, new_leader, battle, pit, fastest_lap, track_status, penalty,
  * retirement, lap1_summary, restart, chequered, session_status.
  * @typedef {{ type: string, key: string, at: number } & Record<string, any>} RaceEvent
  */

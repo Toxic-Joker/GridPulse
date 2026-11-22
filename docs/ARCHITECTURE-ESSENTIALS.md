@@ -56,6 +56,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 19. A new session on the same connection starts from a new baseline with fresh detector memory (D23).
 20. A retirement is only announced after `Retired` has held for 60 s; the feed can take one back (D24).
 21. `Stopped` means out, like `Retired`; a car marked out after the race is over finished it (D25).
+22. A pass or lead change the same pair undoes within 30 s is one `battle` moment, and the pair's next swaps stay quiet until they hold station for 30 s (D26).
 
 ## Don't
 - Don't copy code from termf1 (no licence), undercut-f1 (GPL), f1-dash (AGPL). Read only.

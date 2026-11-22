@@ -9,6 +9,11 @@ const CONFIRM_SNAPSHOTS = 2;
 // The feed can mark a car retired and take it back when it gets going again (LAW, 32 s,
 // Las Vegas 2026), so a retirement is announced once it has held this long.
 const RETIRE_CONFIRM_MS = 60000;
+// With the 2026 overtake mode two cars can swap back and forth for laps (VER and NOR swapped
+// the lead 34 times at Las Vegas 2026). A pass the same pair undoes within this long is one
+// battle on air: the first pass as usual, the swap back as a battle, and the rest quiet
+// until the pair has held station this long.
+const BATTLE_MS = 30000;
 const PENALTY = /\bPENALTY\b/;
 const NOT_A_PENALTY = /NO FURTHER ACTION|UNDER INVESTIGATION|NOTED|REVIEWED/;
 
@@ -25,6 +30,7 @@ function baseline(snapshot, memory) {
   memory.leader = order[0] ?? null;
   memory.rcSeen = snapshot.raceControl.length ? snapshot.raceControl.at(-1).at : 0;
   memory.pitShadow = {};
+  memory.swaps = {};
   memory.lap1Done = snapshot.laps.current >= 2;
   // Cars already out when we join were announced before, or never will be.
   memory.retiredSince = {};
@@ -117,10 +123,29 @@ function orderEvents(oldOrder, newOrder, s, now, memory, at) {
   const racing = s.status === 'running' && ['green', 'yellow'].includes(s.track.status);
   const oldIndex = Object.fromEntries(oldOrder.map((n, i) => [n, i]));
 
+  // One verdict per pair per order change, so a pass for the lead and the new leader it makes
+  // tell the same story: 'new' (announce), 'battle' (the swap back), or 'quiet'.
+  const verdicts = {};
+  const swap = (a, b) => {
+    const pair = [a, b].sort().join('-');
+    if (verdicts[pair]) return { ...verdicts[pair], first: false };
+    const last = memory.swaps[pair];
+    const verdict = last && at - last.at < BATTLE_MS ? (last.battle ? 'quiet' : 'battle') : 'new';
+    memory.swaps[pair] = { at, battle: verdict !== 'new' };
+    verdicts[pair] = { verdict, pair };
+    return { verdict, pair, first: true };
+  };
+  const battle = (a, b, pair, forPosition) => ({ type: 'battle', key: `battle-${pair}-${at}`, at, ...name(now[a]), on: name(now[b]), forPosition });
+
   // A new leader is news however it happened, once the race is under way.
   if (newOrder[0] && newOrder[0] !== memory.leader && s.status === 'running') {
     const leader = now[newOrder[0]];
-    if (memory.leader !== null && leader) out.push({ type: 'new_leader', key: `leader-${leader.number}-${at}`, at, ...name(leader), lap: s.laps.current, previous: memory.leader && now[memory.leader] ? name(now[memory.leader]) : null });
+    const previous = memory.leader && now[memory.leader] ? memory.leader : null;
+    const { verdict, pair } = previous ? swap(newOrder[0], previous) : { verdict: 'new' };
+    if (memory.leader !== null && leader) {
+      if (verdict === 'new') out.push({ type: 'new_leader', key: `leader-${leader.number}-${at}`, at, ...name(leader), lap: s.laps.current, previous: previous ? name(now[previous]) : null });
+      else if (verdict === 'battle') out.push(battle(newOrder[0], previous, pair, 1));
+    }
     memory.leader = newOrder[0];
   }
 
@@ -134,11 +159,15 @@ function orderEvents(oldOrder, newOrder, s, now, memory, at) {
     newOrder.slice(i + 1).forEach((b) => {
       if (!clean(b) || oldIndex[b] === undefined) return;
       if (oldIndex[a] > oldIndex[b] && lapsDown(now[a]) === lapsDown(now[b])) {
-        out.push({ type: 'overtake', key: `pass-${a}-${b}-${at}`, at, ...name(now[a]), on: name(now[b]), forPosition: now[a].position });
+        const { verdict, pair, first } = swap(a, b);
+        // A pass for the lead already has its New leader banner, so the pass itself goes to the ticker.
+        const quiet = out.some((e) => e.type === 'new_leader' && e.number === a) ? { quiet: true } : {};
+        if (verdict === 'new') out.push({ type: 'overtake', key: `pass-${a}-${b}-${at}`, at, ...name(now[a]), on: name(now[b]), forPosition: now[a].position, ...quiet });
+        else if (verdict === 'battle' && first) out.push(battle(a, b, pair, now[a].position));
       }
     });
   });
   return out;
 }
 
-module.exports = { baseline, detect, PIT_SHADOW_MS };
+module.exports = { baseline, detect, PIT_SHADOW_MS, BATTLE_MS };

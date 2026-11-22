@@ -57,7 +57,7 @@ As a streamer, I want to delay all data to match my TV, so my viewers never see 
 
 **4. Automatic race moments**
 As a streamer, I want big moments announced on screen as they happen on TV.
-- Detected: lights out, overtake, new leader, pit stop, fastest lap, safety car / VSC deployed and ending, red flag, penalty (from race control), retirement, chequered flag.
+- Detected: lights out, overtake, new leader, battle (a pass undone by the same pair within 30 s), pit stop, fastest lap, safety car / VSC deployed and ending, red flag, penalty (from race control), retirement, chequered flag.
 - A position change caused by a pit stop or a retirement is not announced as an overtake. Neither are changes under a safety car, VSC or red flag, changes that undo themselves within a second, or reordering after the flag (penalties).
 - On lap 1, single overtakes are not announced. After lap 1, a "lap 1" summary shows the biggest gains and losses.
 - A restart after a red flag gets its own "restart" moment.

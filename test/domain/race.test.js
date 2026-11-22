@@ -100,6 +100,32 @@ test('a car only marked stopped is out, and a car marked out after the flag is n
   assert.deepStrictEqual(types(run([snap(0, ['1', '2'], flag), late, { ...late, at: 60250 }])), []);
 });
 
+// Each order held for two snapshots, so it is confirmed.
+const held = (at, order, over) => [snap(at, order, over), snap(at + 250, order, over)];
+
+test('a pass undone by the same pair within 30 s is one battle, not a stream of passes', () => {
+  const events = run([
+    ...held(0, ['1', '2', '3']),
+    ...held(1000, ['1', '3', '2']), // 3 passes 2
+    ...held(11000, ['1', '2', '3']), // 2 takes it back: a battle
+    ...held(21000, ['1', '3', '2']), // and again, still the same battle
+    ...held(80000, ['1', '2', '3']), // a minute later: a new pass
+  ]);
+  const moments = events.filter((e) => ['overtake', 'battle'].includes(e.type)).map((e) => [e.type, e.code, e.on.code, e.forPosition]);
+  assert.deepStrictEqual(moments, [['overtake', 'C3', 'C2', 2], ['battle', 'C2', 'C3', 2], ['overtake', 'C2', 'C3', 2]]);
+});
+
+test('a lead swapped back within 30 s is a battle for the lead, not a second new leader', () => {
+  const events = run([
+    ...held(0, ['1', '2']),
+    ...held(1000, ['2', '1']),
+    ...held(9000, ['1', '2']),
+    ...held(17000, ['2', '1']),
+  ]);
+  assert.deepStrictEqual(events.filter((e) => e.type !== 'overtake').map((e) => [e.type, e.code, e.forPosition]), [['new_leader', 'C2', undefined], ['battle', 'C1', 1]]);
+  assert.deepStrictEqual(events.filter((e) => e.type === 'overtake').map((e) => e.quiet), [true], 'only the first pass for the lead is an overtake, in the ticker beside its New leader banner');
+});
+
 test('"no further action" is not a penalty', () => {
   const later = snap(250, ['1', '2']);
   later.raceControl = [{ at: 100, message: 'FIA STEWARDS: TIME PENALTY INVESTIGATION - NO FURTHER ACTION', number: null }];

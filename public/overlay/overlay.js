@@ -260,6 +260,7 @@ function describe(e) {
     case 'restart': return { title: t('restart'), line: `${t('lap')} ${e.lap}`, colour: null, tone: 'green' };
     case 'overtake': return { title: t('overtake'), line: `${surname(e)} ${t('on')} ${surname(e.on)} ${t('for')} P${e.forPosition}`, colour: e.teamColour, short: `${e.code} ${t('on')} ${e.on.code} · P${e.forPosition}` };
     case 'new_leader': return { title: t('newLeader'), line: surname(e), colour: e.teamColour };
+    case 'battle': return { title: e.forPosition === 1 ? t('battleLead') : `${t('battle')} P${e.forPosition}`, line: `${surname(e)} · ${surname(e.on)}`, colour: e.teamColour, short: `${e.forPosition === 1 ? t('battleLead') : `${t('battle')} P${e.forPosition}`}: ${e.code} · ${e.on.code}` };
     case 'pit': return { title: t('pitStop'), line: `${surname(e)} · ${t('stop')} ${e.stop}`, colour: e.teamColour, short: `${t('pit')}: ${e.code}` };
     case 'fastest_lap': return { title: t('fastestLap'), line: `${surname(e)} ${e.time}`, colour: e.teamColour, tone: 'purple' };
     case 'penalty': return { title: t('penalty'), line: e.code ? `${e.code} · ${penaltyText(e.text)}` : penaltyText(e.text), colour: e.teamColour };
@@ -349,7 +350,8 @@ function onEvent(e) {
   const content = describe(e);
   if (!content) return;
   if (e.display === 'fullscreen') showMoment(content);
-  else if (e.display === 'banner') showBanner(content, e.type);
+  // A battle for the lead stands in for a New leader banner and jumps the queue like one.
+  else if (e.display === 'banner') showBanner(content, e.type === 'battle' && e.forPosition === 1 ? 'new_leader' : e.type);
   else if (e.display === 'ticker') pushTicker(content.short || `${content.title}${content.line ? `: ${content.line}` : ''}`, content.colour);
 }
 

@@ -88,9 +88,9 @@ Set how far your stream is behind in **Broadcast delay** in the control room, fr
 
 ### Race moments
 
-Lights out, overtakes, a new leader, pit stops, the fastest lap, penalties, retirements, the safety car, VSC and red flag, the restart, a lap 1 summary and the chequered flag with the podium. Each one can be full screen, a banner, a line in the ticker, or off.
+Lights out, overtakes, a new leader, battles, pit stops, the fastest lap, penalties, retirements, the safety car, VSC and red flag, the restart, a lap 1 summary and the chequered flag with the podium. Each one can be full screen, a banner, a line in the ticker, or off.
 
-A position gained in the pits is not an overtake, and neither is a change under the safety car or after the flag. When a restart brings a burst of passes, one banner every 5 seconds goes on air and the rest go to the ticker, with the top 3 and the drivers you follow first.
+A position gained in the pits is not an overtake, and neither is a change under the safety car or after the flag. Two cars swapping places back and forth make one "Battle for P4" banner, not a banner for every swap. When a restart brings a burst of passes, one banner every 5 seconds goes on air and the rest go to the ticker, with the top 3 and the drivers you follow first.
 
 ### Full-screen moments
 
