@@ -6,6 +6,9 @@
 // cars move up the order around a pit stop without passing anyone on track.
 const PIT_SHADOW_MS = 10000;
 const CONFIRM_SNAPSHOTS = 2;
+// The feed can mark a car retired and take it back when it gets going again (LAW, 32 s,
+// Las Vegas 2026), so a retirement is announced once it has held this long.
+const RETIRE_CONFIRM_MS = 60000;
 const PENALTY = /\bPENALTY\b/;
 const NOT_A_PENALTY = /NO FURTHER ACTION|UNDER INVESTIGATION|NOTED|REVIEWED/;
 
@@ -23,6 +26,9 @@ function baseline(snapshot, memory) {
   memory.rcSeen = snapshot.raceControl.length ? snapshot.raceControl.at(-1).at : 0;
   memory.pitShadow = {};
   memory.lap1Done = snapshot.laps.current >= 2;
+  // Cars already out when we join were announced before, or never will be.
+  memory.retiredSince = {};
+  memory.retiredDone = Object.fromEntries(snapshot.drivers.filter((d) => d.retired).map((d) => [d.number, true]));
   markPits(snapshot, memory);
 }
 
@@ -54,7 +60,14 @@ function detect(prev, s, memory) {
     const was = before[d.number];
     if (!was) return;
     if (d.pitStops > was.pitStops) out.push({ type: 'pit', key: `pit-${d.number}-${d.pitStops}`, at, ...name(d), stop: d.pitStops, lap: s.laps.current, position: d.position });
-    if (d.retired && !was.retired) out.push({ type: 'retirement', key: `ret-${d.number}`, at, ...name(d), lap: s.laps.current });
+  });
+  s.drivers.forEach((d) => {
+    if (!d.retired) { delete memory.retiredSince[d.number]; return; }
+    const since = memory.retiredSince[d.number] ??= { at, lap: s.laps.current };
+    if (!memory.retiredDone[d.number] && at - since.at >= RETIRE_CONFIRM_MS) {
+      memory.retiredDone[d.number] = true;
+      out.push({ type: 'retirement', key: `ret-${d.number}`, at, ...name(d), lap: since.lap });
+    }
   });
 
   // Fastest lap of the race. Cars still finish their last lap after the leader takes the flag,

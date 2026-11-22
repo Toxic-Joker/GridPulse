@@ -54,6 +54,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 17. Being connected to the due session is not enough: it must also be recording, or the calendar check reconnects (D20).
 18. Portrait is the same page and the same show (`?format=portrait`): landscape slots fold into `main` and `sub`, the most recently lit widget wins each (D22). A new widget needs a portrait look too.
 19. A new session on the same connection starts from a new baseline with fresh detector memory (D23).
+20. A retirement is only announced after `Retired` has held for 60 s; the feed can take one back (D24).
 
 ## Don't
 - Don't copy code from termf1 (no licence), undercut-f1 (GPL), f1-dash (AGPL). Read only.

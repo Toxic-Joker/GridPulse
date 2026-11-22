@@ -58,7 +58,8 @@ test('pit stops, retirements, penalties and fastest laps are reported once', () 
   later.fastestLap = { number: '2', time: '1:20.000', lap: 4 };
   later.raceControl = [{ at: 100, lap: 5, category: 'Other', message: 'FIA STEWARDS: 5 SECOND TIME PENALTY FOR CAR 2 (C2) - UNSAFE RELEASE', flag: null, number: null }];
   const again = { ...later, at: 500 };
-  const events = run([base, later, again]);
+  const held = { ...later, at: 60250 };
+  const events = run([base, later, again, held, { ...later, at: 61000 }]);
   assert.deepStrictEqual(types(events).sort(), ['fastest_lap', 'penalty', 'pit', 'retirement']);
   assert.strictEqual(events.find((e) => e.type === 'penalty').code, 'C2');
 });
@@ -79,6 +80,15 @@ test('when the feed moves from qualifying to the race, the race starts from its 
   assert.deepStrictEqual(engine.ingest(pitting, 500).events, [], 'the first race snapshot is a baseline');
   const events = engine.ingest(snap(750, ['1', '2'], { session: { key: 2, type: 'race' } }), 750).events;
   assert.deepStrictEqual(types(events), ['session_status', 'lights_out']);
+});
+
+test('a car the feed marks retired and then takes back is not announced as retired', () => {
+  const out = snap(250, ['1', '2'], { drivers: { 2: { retired: true, stopped: true } } });
+  const back = (at) => snap(at, ['1', '2']);
+  const events = run([snap(0, ['1', '2']), out, { ...out, at: 30000 }, back(32250), back(90000)]);
+  assert.ok(!types(events).includes('retirement'));
+  const gone = run([snap(0, ['1', '2']), out, { ...out, at: 30000 }, { ...out, at: 60250 }]);
+  assert.deepStrictEqual(gone.filter((e) => e.type === 'retirement').map((e) => [e.code, e.at]), [['C2', 60250]]);
 });
 
 test('"no further action" is not a penalty', () => {
