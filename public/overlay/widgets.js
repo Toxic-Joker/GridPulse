@@ -290,17 +290,20 @@ function previewData(state) {
   if (!f) return null;
   const grid = f.drivers.filter((d) => d.gridPosition).sort((a, b) => a.gridPosition - b.gridPosition).slice(0, 8)
     .map((d) => ({ position: d.gridPosition, code: d.code, name: d.name, colour: d.teamColour, tyre: d.stints[0] ?? d.tyre }));
-  return { meeting: f.session.meetingName, circuit: f.session.circuitName, session: f.session.type, laps: f.laps.total, grid };
+  // Practice and qualifying have no starting grid, so the panel shows the running order instead of an empty list.
+  const order = grid.length ? [] : f.drivers.filter((d) => d.position).slice(0, 8)
+    .map((d) => ({ position: d.position, code: d.code, name: d.name, colour: d.teamColour, tyre: d.tyre ?? {} }));
+  return { meeting: f.session.meetingName, circuit: f.session.circuitName, session: f.session.type, laps: f.laps.total, grid: grid.length ? grid : order, onGrid: grid.length > 0 };
 }
 
 function previewRender(d, { t }) {
   if (!d) return h('div', { class: 'panel' }, h('div', { class: 'panel-head' }, h('span', null, t('waiting'))));
   return h('div', { class: 'panel preview' },
     h('div', { class: 'panel-head' }, h('span', null, d.circuit || d.meeting), d.laps ? h('span', { class: 'panel-sub' }, `${d.laps} ${t('laps')}`) : ''),
-    h('p', { class: 'preview-kicker' }, `${t(d.session)} · ${t('grid')}`),
+    h('p', { class: 'preview-kicker' }, `${t(d.session)} · ${t(d.onGrid ? 'grid' : 'runningOrder')}`),
     h('ol', { class: 'tower-rows' }, d.grid.map((g) => h('li', { class: 'tower-row' },
       h('b', { class: 'tower-pos' }, g.position), teamBar(g.colour), h('b', { class: 'tower-code' }, g.code), h('i'),
-      h('span', { class: 'tower-value' }, surname(g.name)), tyreChip({ compound: g.tyre.compound })))));
+      h('span', { class: 'tower-value' }, surname(g.name)), tyreChip({ compound: g.tyre?.compound })))));
 }
 
 // ── Tyre strategy: every stint so far, as a bar per driver ──

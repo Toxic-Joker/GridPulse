@@ -28,7 +28,9 @@ const THEMES = {
 };
 
 const LANGS = ['en', 'fr', 'es', 'pt'];
-const SOCIAL_PLATFORMS = ['x', 'instagram', 'tiktok', 'youtube', 'twitch', 'kick'];
+const SOCIAL_PLATFORMS = ['x', 'instagram', 'tiktok', 'youtube', 'twitch', 'kick', 'snapchat'];
+// Streamers often run two accounts on one platform (a main and a second TikTok), so the cap leaves room.
+const MAX_SOCIALS = 8;
 const DISPLAY = {
   lights_out: ['fullscreen', 'banner', 'off'],
   overtake: ['banner', 'off'],
@@ -170,7 +172,7 @@ function applyAction(show, action, now = Date.now()) {
       return { ...show, auto: { ...show.auto, [a.kind]: a.value } };
     }
     case 'socials': {
-      const socials = (Array.isArray(a.socials) ? a.socials : []).slice(0, 6).map((s) => {
+      const socials = (Array.isArray(a.socials) ? a.socials : []).slice(0, MAX_SOCIALS).map((s) => {
         if (!SOCIAL_PLATFORMS.includes(s.platform)) fail(`Unknown platform: ${s.platform}`);
         return { platform: s.platform, handle: cleanText(s.handle, 40) };
       }).filter((s) => s.handle);

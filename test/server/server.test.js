@@ -79,3 +79,16 @@ test('bad actions are refused', () => {
   assert.throws(() => applyAction(defaultShow(), { name: 'followedDrivers', codes: ['ver1'] }), ActionError);
   assert.strictEqual(applyAction(defaultShow(), { name: 'delay', seconds: 999 }).delaySeconds, 300);
 });
+
+test('socials take Snapchat and two accounts on one platform, up to eight', () => {
+  const list = [
+    { platform: 'twitch', handle: 'streamer' }, { platform: 'youtube', handle: '@streamer' },
+    { platform: 'tiktok', handle: '@main' }, { platform: 'tiktok', handle: '@second' },
+    { platform: 'instagram', handle: 'streamer' }, { platform: 'x', handle: '@streamer' },
+    { platform: 'snapchat', handle: 'streamer' },
+  ];
+  assert.deepStrictEqual(applyAction(defaultShow(), { name: 'socials', socials: list }).socials, list);
+  const nine = Array.from({ length: 9 }, (_, i) => ({ platform: 'x', handle: `@a${i}` }));
+  assert.strictEqual(applyAction(defaultShow(), { name: 'socials', socials: nine }).socials.length, 8);
+  assert.throws(() => applyAction(defaultShow(), { name: 'socials', socials: [{ platform: 'myspace', handle: 'a' }] }), ActionError);
+});

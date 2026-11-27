@@ -25,10 +25,14 @@ const MOMENTS = {
   Flags: { track_status: 'Safety car, VSC, red flag' },
   Qualifying: { quali_part: 'Start of Q1, Q2, Q3', session_fastest: 'Fastest time', knockouts: 'Knocked out', escape: 'Out of the drop zone', lap_deleted: 'Lap deleted' },
 };
+// One line about a snapshot, so the live feed and what is on air can be compared.
+const describeFrame = (f) => `${f.session.meetingName} · ${f.session.name} · ${['race', 'sprint'].includes(f.session.type) ? `lap ${f.laps.current}/${f.laps.total ?? '?'}` : f.session.part ? `Q${f.session.part}` : f.status} · ${f.track.status.toUpperCase()} · ${f.drivers.slice(0, 3).map((d) => d.code).join(', ')}`;
 const DISPLAY_LABEL = { fullscreen: 'Full screen', banner: 'Banner', ticker: 'Ticker', off: 'Off' };
 const token = readToken();
 let catalog = null;
 let state = null;
+// Unsaved socials text survives the re-renders that every state update causes.
+let editingSocials = null;
 
 if (!token) {
   root.replaceChildren(h('main', { class: 'locked' },
@@ -58,6 +62,11 @@ if (!token) {
     const overlayUrl = `${location.origin}/overlay/?token=${encodeURIComponent(catalog.overlayToken)}`;
     const groups = {};
     Object.entries(catalog.widgets).forEach(([id, w]) => { (groups[w.group] ||= []).push([id, w]); });
+    // State arrives several times a second during a session, so the box keeps its cursor across re-renders.
+    const previous = root.querySelector('[data-socials]');
+    const typing = previous && document.activeElement === previous ? [previous.selectionStart, previous.selectionEnd] : null;
+    const socialsInput = h('textarea', { rows: 8, 'aria-label': 'Socials, one per line', spellcheck: 'false', 'data-socials': '' });
+    socialsInput.value = editingSocials ?? state.show.socials.map((s) => `${s.platform} ${s.handle}`).join('\n');
     const tokenInput = h('input', { type: 'password', placeholder: 'Paste F1 TV token', autocomplete: 'off' });
     const live = state.live;
     const picker = h('select', { 'aria-label': 'Recording to replay' },
@@ -67,7 +76,7 @@ if (!token) {
     root.replaceChildren(h('main', null,
       h('h1', null, 'GridPulse'),
       h('p', null, `Feed: ${state.status.state} · ${state.status.message}`),
-      live && h('p', null, `${live.session.meetingName} · ${live.session.name} · ${['race', 'sprint'].includes(live.session.type) ? `lap ${live.laps.current}/${live.laps.total ?? '?'}` : live.session.part ? `Q${live.session.part}` : live.status} · ${live.track.status.toUpperCase()} · ${live.drivers.slice(0, 3).map((d) => d.code).join(', ')}`),
+      live && h('p', null, `Live: ${describeFrame(live)}`),
       h('section', null,
         h('h2', null, 'Session'),
         state.next && h('p', null, `Next: ${state.next.meeting} · ${state.next.name} · ${new Date(state.next.at).toLocaleString()}`),
@@ -86,7 +95,17 @@ if (!token) {
       h('section', null,
         h('h2', null, 'Broadcast delay'),
         h('p', null, `${state.show.delaySeconds} s`),
-        [-5, -1, 1, 5].map((by) => h('button', { 'data-delay': by }, `${by > 0 ? '+' : ''}${by} s`))),
+        [-5, -1, 1, 5].map((by) => h('button', { 'data-delay': by }, `${by > 0 ? '+' : ''}${by} s`)),
+        // The delay is invisible from the live line above, so say what the overlay is showing and what is held back.
+        h('p', null, state.onAir ? `On air: ${describeFrame(state.onAir)}` : 'On air: nothing yet'),
+        state.show.delaySeconds > 0 && h('small', null, state.pendingOnAir
+          ? `${state.pendingOnAir} updates waiting to go on air.`
+          : 'Nothing waiting: the feed is quiet, so the delay has nothing to hold back. It shows once the session is running.')),
+      h('section', null,
+        h('h2', null, 'Socials'),
+        h('small', null, `One per line: platform and handle. Platforms: ${catalog.platforms.join(', ')}.`),
+        socialsInput,
+        h('button', { 'data-save-socials': '' }, 'Save socials')),
       h('section', null,
         h('h2', null, 'Moments on air'),
         Object.entries(MOMENTS).map(([group, kinds]) => h('div', null,
@@ -119,6 +138,16 @@ if (!token) {
     Object.values(groups).flat().forEach(([id], i) => buttons[i]?.addEventListener('click', () => send({ name: 'widget', id })));
     root.querySelectorAll('[data-delay]').forEach((b) => b.addEventListener('click', () => send({ name: 'delay', by: Number(b.dataset.delay) })));
     root.querySelectorAll('[data-moment]').forEach((b) => b.addEventListener('click', () => send({ name: 'auto', kind: b.dataset.moment, value: b.dataset.display })));
+    if (typing) { socialsInput.focus(); socialsInput.setSelectionRange(...typing); }
+    socialsInput.addEventListener('input', () => { editingSocials = socialsInput.value; });
+    root.querySelector('[data-save-socials]').addEventListener('click', () => {
+      const socials = socialsInput.value.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+        const [platform, ...rest] = line.split(/\s+/);
+        return { platform: platform.toLowerCase(), handle: rest.join(' ') };
+      });
+      editingSocials = null;
+      send({ name: 'socials', socials });
+    });
     root.querySelector('[data-save-token]').addEventListener('click', () => { send({ name: 'f1tvToken', token: tokenInput.value }); tokenInput.value = ''; });
     root.querySelector('[data-clear-token]').addEventListener('click', () => send({ name: 'f1tvToken', token: '' }));
   }
