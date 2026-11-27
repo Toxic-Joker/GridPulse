@@ -39,7 +39,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 2. First snapshot (and every reconnect) is a baseline: announce nothing that already happened.
 3. All feed data goes through the delay line; operator actions don't.
 4. Live and replay emit the same raw F1 payloads through the same pipeline. Topic "*" = full state → re-baseline.
-5. Estimated data is labelled on air. Radar order never contradicts the tower.
+5. Estimated data is labelled on air. In a race or sprint the radar never draws a car just ahead of the car above it in the tower; practice and qualifying towers rank by best lap, so there cars go where timing puts them (D27).
 6. Overtakes: green/yellow only, lap ≥ 2, no pit/retired cars, same lap, debounced, never after the flag.
 7. Never hard-code grid size (22 cars in 2026) or quali cut positions.
 8. Feed problems keep the last state on air; status becomes `stale`.
@@ -57,6 +57,7 @@ data/              git-ignored runtime state, caches, replays, secrets
 20. A retirement is only announced after `Retired` has held for 60 s; the feed can take one back (D24).
 21. `Stopped` means out, like `Retired`; a car marked out after the race is over finished it (D25).
 22. A pass or lead change the same pair undoes within 30 s is one `battle` moment, and the pair's next swaps stay quiet until they hold station for 30 s (D26).
+23. A car's mini-sector clock restarts only when it completes a new mini-sector; the feed re-sends and recolours old ones (D27).
 
 ## Don't
 - Don't copy code from termf1 (no licence), undercut-f1 (GPL), f1-dash (AGPL). Read only.

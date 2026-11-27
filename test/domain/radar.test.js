@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const zlib = require('node:zlib');
 const { buildCircuit, pointAtLap, lapFractionAt, circuitForOverlay } = require('../../server/domain/track');
-const { estimate, lapSeconds } = require('../../server/domain/estimator');
+const { estimate, lapSeconds, CLOSE_LAP } = require('../../server/domain/estimator');
 const { toRadarFrame } = require('../../server/domain/positions');
 const { TimingState } = require('../../server/domain/state');
 const { normalizeSession } = require('../../server/domain/normalize');
@@ -58,7 +58,7 @@ test('estimated positions stay within one mini-sector of the truth, in tower ord
       const snap = normalizeSession(state.topics, state.segmentAt, l.at);
       if (snap.status !== 'running' || snap.track.status !== 'green') return;
       const frame = estimate(snap, null, l.at, 1);
-      let previousTotal = Infinity;
+      let above = null;
       frame.cars.forEach((car) => {
         const truth = l.cars[car.number];
         const driver = snap.drivers.find((d) => d.number === car.number);
@@ -66,8 +66,11 @@ test('estimated positions stay within one mini-sector of the truth, in tower ord
         const trueLap = (truth.d / TRACK_M) % 1;
         const diff = Math.abs(car.lap - trueLap);
         errors.push(Math.min(diff, 1 - diff) * TRACK_M);
-        assert.ok(driver && car.laps < previousTotal + 1e-9, `${car.code} drawn ahead of the car above it`);
-        previousTotal = car.laps;
+        // Compared round the lap: a car may only be further ahead than CLOSE_LAP (lapped, or the
+        // lap count lagging at the line), never just ahead of the car above it.
+        const lead = (((car.lap - (above?.lap ?? 0) + 0.5) % 1) + 1) % 1 - 0.5;
+        assert.ok(driver && !(above && driver.laps >= above.laps && lead > 1e-6 && lead < CLOSE_LAP), `${car.code} drawn just ahead of the car above it`);
+        above = { lap: car.lap, laps: driver.laps };
       });
     }
   });
@@ -79,4 +82,45 @@ test('estimated positions stay within one mini-sector of the truth, in tower ord
   assert.ok(within >= 0.9, `only ${(within * 100).toFixed(1)}% within one mini-sector (${segment.toFixed(0)} m)`);
   assert.ok(median < segment / 2, `median error ${median.toFixed(0)} m`);
   t.diagnostic(`estimator: ${(within * 100).toFixed(1)}% within ${segment.toFixed(0)} m, median ${median.toFixed(0)} m, p95 ${sorted[Math.floor(sorted.length * 0.95)].toFixed(0)} m`);
+});
+
+// ── Estimated radar regressions seen at Las Vegas, Nov 2026 (synthetic data) ──
+const car = (number, laps, segment, at, extra = {}) => ({
+  number, code: `C${number}`, teamColour: '888888', inPit: false, retired: false, stopped: false,
+  laps, lastLap: '1:40.000', progress: { segment, segmentsPerLap: 20, at }, ...extra,
+});
+const snap = (type, drivers) => ({ session: { type }, track: { status: 'green' }, drivers });
+
+test('qualifying cars are drawn where they are, not held behind the tower order', () => {
+  // P1 by best lap is at the start of its lap; P2 is three quarters round.
+  const frame = estimate(snap('qualifying', [car('1', 4, 1, 0), car('2', 7, 15, 0)]), null, 1000, 1);
+  assert.ok(frame.cars[1].lap > 0.7, `P2 drawn at ${frame.cars[1].lap}`);
+});
+
+test('in a race a car is still kept just behind the car above it', () => {
+  // P2's estimate has run a little ahead of P1 in the same mini-sector.
+  const frame = estimate(snap('race', [car('1', 5, 10, 0), car('2', 5, 10, -3000)]), null, 1000, 1);
+  assert.ok(frame.cars[1].lap < frame.cars[0].lap, 'P2 behind P1');
+});
+
+test('the leader crossing the line before its lap count goes up does not drag the field back', () => {
+  // P1's mini-sectors have reset (segment 1) but its lap count still says 5; P2 is near the end of lap 6.
+  const frame = estimate(snap('race', [car('1', 5, 1, 0), car('2', 5, 19, 0)]), null, 1000, 1);
+  assert.ok(frame.cars[1].lap > 0.9, `P2 drawn at ${frame.cars[1].lap}`);
+});
+
+test('a practice car with no new mini-sector for minutes is off the radar, not frozen on track', () => {
+  const frame = estimate(snap('practice', [car('1', 3, 8, 0), car('2', 3, 8, 170000)]), null, 180000, 1);
+  assert.strictEqual(frame.cars[0].lap, null);
+  assert.ok(frame.cars[1].lap > 0.4);
+});
+
+test('a recoloured mini-sector does not restart the clock; a new one does', () => {
+  const state = new TimingState();
+  const sectors = (statuses) => ({ 0: { Segments: Object.fromEntries(statuses.map((s, i) => [i, { Status: s }])) } });
+  state.apply({ topic: 'TimingData', data: { Lines: { 1: { Sectors: sectors([2049, 2049, 0, 0]) } } }, at: 1000 });
+  state.apply({ topic: 'TimingData', data: { Lines: { 1: { Sectors: { 0: { Segments: { 1: { Status: 2051 } } } } } } }, at: 4000 });
+  assert.strictEqual(state.segmentAt['1'], 1000);
+  state.apply({ topic: 'TimingData', data: { Lines: { 1: { Sectors: { 0: { Segments: { 2: { Status: 2049 } } } } } } }, at: 6000 });
+  assert.strictEqual(state.segmentAt['1'], 6000);
 });

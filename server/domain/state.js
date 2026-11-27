@@ -66,6 +66,21 @@ function segmentsTouched(line) {
   return isObject(line?.Sectors) && Object.values(line.Sectors).some((s) => s && s.Segments !== undefined);
 }
 
+// How many mini-sectors of the lap the car has completed: the last one with a status, as normalize counts them.
+function segmentsDone(line) {
+  let count = 0;
+  let done = 0;
+  // Merged state keeps sectors and mini-sectors as arrays; patches send them as keyed objects.
+  const list = (v) => (v && typeof v === 'object' ? Object.values(v) : []);
+  list(line?.Sectors).forEach((s) => {
+    list(s?.Segments).forEach((seg) => {
+      count += 1;
+      if (seg && seg.Status) done = count;
+    });
+  });
+  return done;
+}
+
 class TimingState {
   constructor() {
     this.topics = {};
@@ -105,13 +120,17 @@ class TimingState {
       }
       return;
     }
-    if (name === 'TimingData' && isObject(payload?.Lines)) {
-      Object.entries(payload.Lines).forEach(([number, line]) => {
-        if (segmentsTouched(line)) this.segmentAt[number] = at;
-      });
-    }
+    // The feed also re-sends and recolours mini-sectors a car has already passed. Only a change in
+    // how many are done restarts the clock, or the estimated radar throws the car back to the
+    // start of its mini-sector (seen at Las Vegas, Nov 2026).
+    const touched = name === 'TimingData' && isObject(payload?.Lines)
+      ? Object.entries(payload.Lines).filter(([, line]) => segmentsTouched(line)).map(([number]) => [number, segmentsDone(this.topics.TimingData?.Lines?.[number])])
+      : [];
     if (name === 'ExtrapolatedClock') this.clockAt = at;
     this.topics[name] = mergePatch(this.topics[name], payload);
+    touched.forEach(([number, before]) => {
+      if (segmentsDone(this.topics.TimingData.Lines[number]) !== before || this.segmentAt[number] === undefined) this.segmentAt[number] = at;
+    });
     if (name === 'TimingData' && isObject(payload?.Lines)) this.trackOutLaps(payload.Lines);
   }
 
